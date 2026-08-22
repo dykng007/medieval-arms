@@ -85,6 +85,14 @@ jobs:
           game-versions: 1.21.1
           java: 21
 
+          # 한 플랫폼이 실패해도 나머지는 계속 발행한다.
+          # 기본값 fail 은 첫 오류에서 즉시 멈추는데, mc-publish가 CurseForge를
+          # GitHub보다 먼저 처리하기 때문에 CurseForge가 삐끗하면 GitHub 릴리스가
+          # 아예 만들어지지 않는다. 실제로 프로젝트 ID가 틀렸을 때 그렇게 됐다.
+          # skip 은 오류를 경고로 남기고 남은 대상을 마저 처리한 뒤,
+          # 실행 상태만 실패로 표시한다. 릴리스는 지키면서 문제도 묻히지 않는다.
+          fail-mode: skip
+
           # GitHub Release — 항상 동작
           github-token: ${{ secrets.GITHUB_TOKEN }}
           github-tag: ${{ steps.version.outputs.tag }}
