@@ -1,5 +1,7 @@
 # Medieval Arms
 
+[![Build](https://github.com/dykng007/medieval-arms/actions/workflows/build.yml/badge.svg)](https://github.com/dykng007/medieval-arms/actions/workflows/build.yml)
+
 마인크래프트 **1.21.1 / NeoForge** 모드. 중세 무기와 갑옷을 추가하고,
 **무기 종류에 따라 휘두르는 모션이 달라진다.**
 

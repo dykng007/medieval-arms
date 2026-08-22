@@ -24,18 +24,18 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0   # 변경 이력 기반 changelog 생성을 위해 전체 히스토리를 받는다
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '21'
           distribution: 'temurin'
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
 
       # 태그 v0.2.0 → MOD_VERSION=0.2.0
       # 태그에 -alpha / -beta 가 들어 있으면 릴리스 종류도 그에 맞게 정한다.

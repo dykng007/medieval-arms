@@ -16,16 +16,16 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '21'
           distribution: 'temurin'
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
 
       - name: Build
         run: ./gradlew build --stacktrace
@@ -33,7 +33,7 @@ jobs:
       # 빌드된 jar를 Actions 화면에서 내려받을 수 있게 남긴다.
       # PR 단계에서 실제로 게임에 넣어보고 싶을 때 쓴다.
       - name: Upload jar
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: medievalarms-dev-${{ github.sha }}
           path: build/libs/*.jar

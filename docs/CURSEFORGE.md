@@ -22,7 +22,8 @@ CurseForge 업로드 API는 `POST /api/projects/{projectId}/upload-file` 하나�
 - **Summary**: 중세 무기와 갑옷을 추가하고, 무기 종류별로 휘두르는 모션이 달라지는 모드
 - **Category**: Armor, Tools, and Weapons
 - **License**: MIT
-- **Source / Issues URL**: 이 저장소의 GitHub 주소
+- **Source URL**: https://github.com/dykng007/medieval-arms
+- **Issues URL**: https://github.com/dykng007/medieval-arms/issues
 
 제출하면 승인 대기 상태가 된다. 보통 1~2일 걸린다.
 
