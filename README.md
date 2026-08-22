@@ -54,16 +54,32 @@ python tools\check_recipe_conflicts.py       # 레시피가 바닐라와 겹치�
 
 `weapon/SwingMotion.java`의 숫자만 고치면 된다. 렌더링 코드는 건드릴 필요가 없다.
 
-| 값 | 뜻 | 크게 하면 |
-|---|---|---|
-| `pitchDegrees` | 위아래 회전 | 더 크게 내리친다 |
-| `yawDegrees` | 좌우 회전 | 옆으로 넓게 후린다 |
-| `thrustDistance` | 앞으로 내밀기 | 찌르는 느낌이 강해진다 |
-| `dropDistance` | 아래로 내려가기 | 내려찍는 느낌이 강해진다 |
-| `speedScale` | 완급 | 1보다 크면 날렵하게, 작으면 묵직하게 |
+동작은 **준비(windup)** 와 **타격(strike)** 두 단계로 나뉜다.
 
-같은 값이 1인칭과 3인칭 양쪽에 쓰인다. 3인칭은 팔이 과장되게 꺾이지 않도록
-절반만 반영된다.
+| 값 | 단계 | 뜻 |
+|---|---|---|
+| `windupPitch` | 준비 | 무기를 위로 치켜드는 각도 |
+| `strikePitch` | 타격 | 아래로 내리치는 각도 |
+| `windupPull` | 준비 | 몸쪽으로 당기는 거리(블록) |
+| `strikeReach` | 타격 | 앞으로 내미는 거리(블록) |
+| `strikeYaw` | 타격 | 옆으로 후리는 각도 |
+| `speedScale` | 전체 | 완급. 1보다 크면 날렵, 작으면 묵직 |
+
+**같은 축에서 각도만 조금 다르게 주면 화면에서는 똑같아 보인다.** 처음 만들었을 때
+실제로 그랬다. 여섯 무기가 하나의 궤적에 각도만 다르게 얹힌 구조여서, 숫자상으로는
+달랐는데 게임에서는 구분이 안 됐다. 무기를 구분하려면 *어느 축으로 크게 움직이는지*
+자체를 다르게 해야 한다 — 창은 앞뒤 이동, 철퇴는 위아래 회전, 미늘창은 좌우 회전.
+
+값을 바꾼 뒤에는 게임을 켜기 전에 이걸 먼저 돌리는 편이 빠르다.
+
+```powershell
+python tools\check_swing_motions.py
+```
+
+궤적을 계산해 모션 쌍마다 최대 차이를 재고, 눈에 띌 만큼 다른지 판정한다.
+진행도 0과 1에서 평상시 자세로 돌아오는지도 함께 확인한다(안 돌아오면 동작 끝에 툭 끊긴다).
+
+같은 값이 1인칭과 3인칭 양쪽에 쓰인다. 3인칭은 팔이 과장되게 꺾이지 않도록 절반만 반영된다.
 
 **텍스처를 직접 그리고 싶다면** `src/main/resources/assets/medievalarms/textures/`
 아래 png를 그냥 덮어쓰면 된다. `tools/gen_textures.py`를 다시 실행하지만 않으면
@@ -116,6 +132,7 @@ src/main/resources/           텍스처 등 직접 만든 리소스
 src/generated/resources/      runData가 만들어낸 JSON (커밋함)
 tools/gen_textures.py         텍스처 생성 스크립트 (Pillow 불필요, 표준 라이브러리만)
 tools/check_recipe_conflicts.py  레시피가 바닐라와 겹치는지 검사
+tools/check_swing_motions.py     모션이 서로 구분되는지 검사
 .github/workflows/build.yml   push/PR 마다 빌드 검사
 .github/workflows/release.yml v* 태그 → 빌드·릴리스·업로드
 ```

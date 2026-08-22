@@ -40,8 +40,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class HumanoidModelMixin {
 
     /**
-     * 바닐라가 이미 적용하는 내리치기 각도(라디안 1.2 ≈ 69도)에 해당하는 값.
-     * {@link SwingMotion#pitchDegrees}가 이 값이면 바닐라와 같은 동작이 되고,
+     * 바닐라가 스스로 적용하는 내리치기 각도(라디안 1.2 = 약 69도)에 해당하는 값.
+     * {@link SwingMotion#strikePitch}가 이 값이면 바닐라와 같은 동작이 되고,
      * 크면 더 내리치고 작으면 더 수평에 가까워진다.
      */
     private static final float VANILLA_PITCH_DEGREES = 69.0F;
@@ -51,6 +51,9 @@ public abstract class HumanoidModelMixin {
      * 절반만 반영해 자연스러운 폭으로 맞춘다.
      */
     private static final float THIRD_PERSON_SCALE = 0.5F;
+
+    /** 1인칭과 같은 정규화 상수. {@code MedievalWeaponClientExtensions} 참고. */
+    private static final float PHASE_PEAK = 0.58F;
 
     /** 도 단위를 라디안으로. ModelPart의 회전은 전부 라디안이다. */
     private static final float DEG_TO_RAD = (float) (Math.PI / 180.0);
@@ -80,22 +83,24 @@ public abstract class HumanoidModelMixin {
         ModelPart part = arm == HumanoidArm.RIGHT ? model.rightArm : model.leftArm;
         int side = arm == HumanoidArm.RIGHT ? 1 : -1;
 
-        // 스윙 중반에 가장 크고 양 끝에서 0이 되는 곡선.
-        // 끝에서 0이라 동작이 끝나면 바닐라 자세로 매끄럽게 돌아온다.
-        float curve = Mth.sin(attackTime * (float) Math.PI);
+        // 1인칭과 같은 2단 곡선을 쓴다. 그래야 시점을 바꿔도 같은 동작으로 보인다.
+        float p = (float) Math.pow(Mth.clamp(attackTime, 0.0F, 1.0F), 1.0F / motion.speedScale);
+        float bell = Mth.sin(p * (float) Math.PI);
+        float windup = bell * (1.0F - p) / PHASE_PEAK;
+        float strike = bell * p / PHASE_PEAK;
 
-        // 바닐라와의 '차이'만 더한다. 차이가 0이면 바닐라 그대로다.
-        float extraPitch = (motion.pitchDegrees - VANILLA_PITCH_DEGREES) * DEG_TO_RAD * THIRD_PERSON_SCALE;
-        float extraYaw = motion.yawDegrees * DEG_TO_RAD * THIRD_PERSON_SCALE;
+        // 바닐라가 이미 적용한 몫을 뺀 '차이'만 더한다. 차이가 0이면 바닐라 그대로다.
+        // 바닐라의 기여는 스윙 내내 아래로 내리치는 한 방향이라 strike 쪽에서 상쇄한다.
+        float pitchDeg = motion.windupPitch * windup
+                - (motion.strikePitch - VANILLA_PITCH_DEGREES) * strike;
 
         // xRot을 빼면 팔이 아래로 내려간다(바닐라도 같은 부호를 쓴다).
-        part.xRot -= extraPitch * curve;
-        part.yRot += side * extraYaw * curve;
+        part.xRot -= pitchDeg * DEG_TO_RAD * THIRD_PERSON_SCALE;
+        part.yRot += side * motion.strikeYaw * (windup - strike) * DEG_TO_RAD * THIRD_PERSON_SCALE;
 
         // 찌르기는 팔을 앞으로 내민다.
         // ModelPart의 좌표는 픽셀 단위(한 블록 = 16)라, 블록 단위 값에 16을 곱한다.
-        if (motion.thrustDistance > 0.0F) {
-            part.z -= motion.thrustDistance * 16.0F * curve;
-        }
+        float reach = motion.windupPull * windup - motion.strikeReach * strike;
+        part.z += reach * 16.0F * THIRD_PERSON_SCALE;
     }
 }

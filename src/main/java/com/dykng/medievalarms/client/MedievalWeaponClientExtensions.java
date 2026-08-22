@@ -77,39 +77,57 @@ public final class MedievalWeaponClientExtensions implements IClientItemExtensio
     }
 
     /**
+     * 두 단계 곡선의 최대값. 아래 {@code sin(pi*p)*(1-p)} 는 p가 0.35 부근에서
+     * 약 0.58로 최대가 된다. 이 값으로 나눠 정규화해두면 {@link SwingMotion}에 적은
+     * 숫자가 곧 그 단계에서의 실제 최대 각도/거리가 되어 조정하기 쉽다.
+     */
+    private static final float PHASE_PEAK = 0.58F;
+
+    /**
      * 무기 종류에 따라 다른 휘두르기 동작.
      *
-     * <p>바닐라의 동작을 뼈대로 삼고 각 축의 크기만 {@link SwingMotion}의 값으로 바꿨다.
-     * 모션을 조정하고 싶으면 이 파일이 아니라 {@code SwingMotion}의 숫자만 고치면 된다.
+     * <p>동작을 준비(windup)와 타격(strike) 두 단계로 나눠 적용한다.
+     * 두 단계 모두 진행도 0과 1에서 값이 0이 되므로, 휘두르지 않을 때의 자세는
+     * 바닐라와 정확히 같고 동작이 끝나는 순간에도 끊기지 않는다.
      *
-     * <p>진행도가 0일 때(휘두르지 않을 때) 모든 항이 0이 되어 바닐라의 평상시 자세와
-     * 정확히 같아진다. 그래서 가만히 들고 있을 때는 다른 아이템과 이질감이 없다.
+     * <p>모션을 조정하고 싶으면 이 파일이 아니라 {@link SwingMotion}의 숫자만 고치면 된다.
      */
     private static void applySwing(PoseStack poseStack, HumanoidArm arm, float progress, SwingMotion motion) {
         int side = arm == HumanoidArm.RIGHT ? 1 : -1;
 
-        // 진행도를 모션의 성격에 맞게 다시 매핑한다.
-        // speedScale이 1보다 크면 앞부분이 빨라 가볍게, 작으면 느려 묵직하게 느껴진다.
-        // 지수를 쓰는 이유는 0과 1을 그대로 유지해 동작이 중간에 잘리지 않게 하기 위함이다.
-        float p = (float) Math.pow(Mth.clamp(progress, 0.0F, 1.0F), 1.0F / motion.speedScale);
+        // 바닐라가 손을 화면 안쪽으로 돌려두는 기본 각도.
+        // 이 45도 쌍 사이에 모션을 넣어야 평상시 자세가 다른 아이템과 같아진다.
+        poseStack.mulPose(Axis.YP.rotationDegrees(side * 45.0F));
 
-        // 두 가지 곡선. 둘 다 0에서 시작해 0으로 끝난다.
-        float peakMid = Mth.sin(p * p * (float) Math.PI);         // 중반에 가장 크다
-        float peakEarly = Mth.sin(Mth.sqrt(p) * (float) Math.PI); // 초반에 가장 크다
+        float p = Mth.clamp(progress, 0.0F, 1.0F);
+        if (p > 0.0F) {
+            // 완급에 따라 진행도를 다시 매핑한다.
+            p = (float) Math.pow(p, 1.0F / motion.speedScale);
 
-        // 1) 시야 기준 이동. 아직 회전 전이라 -Z가 정면, -Y가 아래다.
-        //    찌르기는 앞으로, 내리치기는 아래로 움직인다.
-        poseStack.translate(0.0F,
-                -motion.dropDistance * peakEarly,
-                -motion.thrustDistance * peakEarly);
+            // 시작과 끝에서 0이 되는 종 모양 곡선.
+            float bell = Mth.sin(p * (float) Math.PI);
+            // 앞쪽에 무게가 실린 단계와 뒤쪽에 실린 단계로 나눈다.
+            float windup = bell * (1.0F - p) / PHASE_PEAK;  // 0.35 부근에서 최대
+            float strike = bell * p / PHASE_PEAK;           // 0.65 부근에서 최대
 
-        // 2) 회전. 앞뒤의 45도는 바닐라가 손을 화면 안쪽으로 돌려두는 기본 각도라 그대로 둔다.
-        poseStack.mulPose(Axis.YP.rotationDegrees(side * (45.0F + peakMid * -20.0F)));
-        poseStack.mulPose(Axis.ZP.rotationDegrees(side * peakEarly * -20.0F));
-        // 좌우로 후리기 (SWEEP에서 크다)
-        poseStack.mulPose(Axis.YP.rotationDegrees(side * peakEarly * -motion.yawDegrees));
-        // 위에서 아래로 내리치기 (OVERHEAD/CHOP에서 크다)
-        poseStack.mulPose(Axis.XP.rotationDegrees(peakEarly * -motion.pitchDegrees));
+            // 앞뒤 이동: 준비 때 몸쪽으로 당겼다가 타격 때 앞으로 내지른다.
+            // +Z가 몸쪽, -Z가 앞쪽이다.
+            poseStack.translate(0.0F, 0.0F,
+                    motion.windupPull * windup - motion.strikeReach * strike);
+
+            // 위아래 회전: 준비 때 치켜들었다가 타격 때 내리친다.
+            // 양수가 위, 음수가 아래다.
+            poseStack.mulPose(Axis.XP.rotationDegrees(
+                    motion.windupPitch * windup - motion.strikePitch * strike));
+
+            // 좌우 회전: 준비 때 바깥으로 열었다가 타격 때 안쪽으로 후린다.
+            poseStack.mulPose(Axis.YP.rotationDegrees(
+                    side * motion.strikeYaw * (windup - strike)));
+
+            // 손목이 살짝 돌아가는 느낌. 모든 모션에 공통으로 조금씩 준다.
+            poseStack.mulPose(Axis.ZP.rotationDegrees(side * -18.0F * strike));
+        }
+
         poseStack.mulPose(Axis.YP.rotationDegrees(side * -45.0F));
     }
 }
