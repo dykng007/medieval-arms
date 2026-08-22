@@ -39,19 +39,32 @@ jobs:
 
       # 태그 v0.2.0 → MOD_VERSION=0.2.0
       # 태그에 -alpha / -beta 가 들어 있으면 릴리스 종류도 그에 맞게 정한다.
-      - name: Resolve version from tag
+      # 보통은 태그에서 버전을 뽑는다: v0.2.0 -> 0.2.0
+      # 다만 Actions 화면에서 수동 실행(workflow_dispatch)하면 태그가 없어
+      # GITHUB_REF가 refs/heads/main 이 된다. 그 경우에는 gradle.properties의
+      # mod_version을 쓴다. 이 분기가 없으면 버전이 "refs/heads/main"이 되어버린다.
+      - name: Resolve version
         id: version
         run: |
-          TAG="${GITHUB_REF#refs/tags/}"
-          VERSION="${TAG#v}"
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            TAG="${GITHUB_REF#refs/tags/}"
+            VERSION="${TAG#v}"
+          else
+            VERSION="$(grep -E '^mod_version=' gradle.properties | cut -d '=' -f 2 | tr -d '[:space:]')"
+            TAG="v$VERSION"
+            echo "태그가 아닌 수동 실행입니다. gradle.properties의 버전을 씁니다."
+          fi
+
           case "$VERSION" in
             *alpha*) TYPE=alpha ;;
             *beta*|*rc*) TYPE=beta ;;
             *) TYPE=release ;;
           esac
+
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "type=$TYPE" >> "$GITHUB_OUTPUT"
-          echo "태그 $TAG → 버전 $VERSION ($TYPE)"
+          echo "릴리스 $TAG / 버전 $VERSION / 종류 $TYPE"
 
       - name: Build
         env:
@@ -74,6 +87,7 @@ jobs:
 
           # GitHub Release — 항상 동작
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-tag: ${{ steps.version.outputs.tag }}
           github-generate-changelog: true
 
           # CurseForge — 시크릿이 비어 있으면 자동으로 건너뜀
