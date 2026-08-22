@@ -1,0 +1,22 @@
+{
+  "entries": [
+    {
+      "enum": "net/minecraft/client/model/HumanoidModel$ArmPose",
+      "name": "MEDIEVALARMS_POLEARM",
+      "constructor": "(ZLnet/neoforged/neoforge/client/IArmPoseTransformer;)V",
+      "parameters": {
+        "class": "com/dykng/medievalarms/client/ModArmPoses",
+        "field": "POLEARM"
+      }
+    },
+    {
+      "enum": "net/minecraft/client/model/HumanoidModel$ArmPose",
+      "name": "MEDIEVALARMS_SHOULDERED",
+      "constructor": "(ZLnet/neoforged/neoforge/client/IArmPoseTransformer;)V",
+      "parameters": {
+        "class": "com/dykng/medievalarms/client/ModArmPoses",
+        "field": "SHOULDERED"
+      }
+    }
+  ]
+}

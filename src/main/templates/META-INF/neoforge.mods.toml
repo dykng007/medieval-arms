@@ -9,6 +9,9 @@ license="${mod_license}"
 modId="${mod_id}"
 version="${mod_version}"
 displayName="${mod_name}"
+# 바닐라 열거형에 항목을 추가하겠다는 선언.
+# 이 모드는 팔 자세(HumanoidModel.ArmPose)에 두 가지를 더한다.
+enumExtensions="META-INF/enumextensions.json"
 authors="${mod_authors}"
 description='''
 중세 무기와 갑옷을 추가합니다. 무기 종류에 따라 휘두르는 모션이 달라집니다.
