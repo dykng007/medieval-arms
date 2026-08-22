@@ -1,0 +1,81 @@
+# v로 시작하는 태그를 밀면 여기가 돈다.
+#
+#   git tag v0.2.0
+#   git push origin v0.2.0
+#
+# 하는 일: 빌드 → GitHub Release 생성 + jar 첨부 → CurseForge 업로드.
+#
+# CurseForge 시크릿(CURSEFORGE_ID / CURSEFORGE_TOKEN)이 아직 없어도 실패하지 않는다.
+# mc-publish는 토큰이 빈 문자열이면 그 플랫폼을 조용히 건너뛴다.
+# 나중에 CurseForge 프로젝트가 승인되면 시크릿 두 개만 등록하면 되고,
+# 이 파일은 손댈 필요가 없다. (docs/CURSEFORGE.md 참고)
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write   # Release를 만들려면 쓰기 권한이 필요하다
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # 변경 이력 기반 changelog 생성을 위해 전체 히스토리를 받는다
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # 태그 v0.2.0 → MOD_VERSION=0.2.0
+      # 태그에 -alpha / -beta 가 들어 있으면 릴리스 종류도 그에 맞게 정한다.
+      - name: Resolve version from tag
+        id: version
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          VERSION="${TAG#v}"
+          case "$VERSION" in
+            *alpha*) TYPE=alpha ;;
+            *beta*|*rc*) TYPE=beta ;;
+            *) TYPE=release ;;
+          esac
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "type=$TYPE" >> "$GITHUB_OUTPUT"
+          echo "태그 $TAG → 버전 $VERSION ($TYPE)"
+
+      - name: Build
+        env:
+          MOD_VERSION: ${{ steps.version.outputs.version }}
+        run: ./gradlew build --stacktrace
+
+      - name: Publish
+        uses: Kira-NT/mc-publish@v3.3.1
+        with:
+          # 배포할 파일: dev/sources/javadoc jar은 제외한 본 jar
+          files: build/libs/!(*-@(dev|sources|javadoc)).jar
+
+          name: Medieval Arms ${{ steps.version.outputs.version }}
+          version: ${{ steps.version.outputs.version }}
+          version-type: ${{ steps.version.outputs.type }}
+
+          loaders: neoforge
+          game-versions: 1.21.1
+          java: 21
+
+          # GitHub Release — 항상 동작
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-generate-changelog: true
+
+          # CurseForge — 시크릿이 비어 있으면 자동으로 건너뜀
+          curseforge-id: ${{ secrets.CURSEFORGE_ID }}
+          curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}

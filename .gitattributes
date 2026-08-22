@@ -1,0 +1,22 @@
+# 기본: 텍스트 파일은 git이 알아서 판단
+* text=auto
+
+# ── Linux CI에서 반드시 LF여야 하는 파일 ──────────────────────
+# gradlew는 sh 스크립트다. CRLF로 커밋되면 ubuntu 러너에서
+# "bad interpreter: /bin/sh^M" 으로 빌드가 통째로 실패한다.
+gradlew     text eol=lf
+*.sh        text eol=lf
+
+# Windows 전용 스크립트는 CRLF 유지
+*.bat       text eol=crlf
+*.cmd       text eol=crlf
+
+# 데이터 생성기(runData) 출력물은 항상 LF로 나온다.
+# 강제해두지 않으면 줄바꿈만 바뀐 것으로 매번 변경 표시가 뜬다.
+src/generated/**/.cache/* text eol=lf
+src/generated/**/*.json   text eol=lf
+
+# 바이너리 (git이 텍스트로 오해해 망가뜨리지 않도록)
+*.jar  binary
+*.png  binary
+*.ogg  binary

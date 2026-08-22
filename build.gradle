@@ -1,0 +1,117 @@
+plugins {
+    id 'java-library'
+    id 'net.neoforged.moddev' version '2.0.144'
+    id 'idea'
+}
+
+tasks.named('wrapper', Wrapper).configure {
+    distributionType = Wrapper.DistributionType.BIN
+}
+
+// 릴리스 버전 결정.
+// CI(GitHub Actions)는 v0.2.0 태그에서 "0.2.0"을 뽑아 MOD_VERSION 환경변수로 넘긴다.
+// 로컬에서는 환경변수가 없으므로 gradle.properties의 mod_version이 쓰인다.
+// providers.environmentVariable(...)를 쓰는 이유: Gradle 설정 캐시(configuration cache)가
+// System.getenv() 직접 호출을 추적하지 못해 캐시가 낡은 값을 물고 있을 수 있기 때문.
+def resolvedModVersion = providers.environmentVariable('MOD_VERSION').getOrElse(mod_version as String)
+
+version = resolvedModVersion
+group = mod_group_id
+
+sourceSets.main.resources {
+    // 데이터 생성기(runData)가 만들어낸 리소스도 jar에 포함시킨다.
+    srcDir('src/generated/resources')
+    exclude("**/*.bbmodel")          // BlockBench 프로젝트 파일은 배포 제외
+    exclude("src/generated/**/.cache") // datagen 캐시 파일도 제외
+}
+
+base {
+    archivesName = mod_id
+}
+
+// 마인크래프트 1.21.1은 Java 21로 돌아간다.
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+neoForge {
+    version = project.neo_version
+
+    parchment {
+        mappingsVersion = project.parchment_mappings_version
+        minecraftVersion = project.parchment_minecraft_version
+    }
+
+    runs {
+        client {
+            client()
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        }
+
+        server {
+            server()
+            programArgument '--nogui'
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        }
+
+        // 아이템 모델 / 레시피 / 번역 JSON을 코드에서 생성한다. `./gradlew runData`
+        data {
+            data()
+            programArguments.addAll '--mod', project.mod_id,
+                    '--all',
+                    '--output', file('src/generated/resources/').getAbsolutePath(),
+                    '--existing', file('src/main/resources/').getAbsolutePath()
+        }
+
+        configureEach {
+            systemProperty 'forge.logging.markers', 'REGISTRIES'
+            logLevel = org.slf4j.event.Level.DEBUG
+        }
+    }
+
+    mods {
+        "${mod_id}" {
+            sourceSet(sourceSets.main)
+        }
+    }
+}
+
+dependencies {
+    // 현재 외부 의존성 없음. 애니메이션도 NeoForge 기본 API만으로 구현한다.
+}
+
+// src/main/templates 안의 ${...} 자리표시자를 gradle.properties 값으로 치환한다.
+// neoforge.mods.toml이 이 방식으로 만들어진다.
+var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
+    var replaceProperties = [
+            minecraft_version      : minecraft_version,
+            minecraft_version_range: minecraft_version_range,
+            neo_version            : neo_version,
+            loader_version_range   : loader_version_range,
+            mod_id                 : mod_id,
+            mod_name               : mod_name,
+            mod_license            : mod_license,
+            mod_authors            : mod_authors,
+            // 주의: gradle.properties의 mod_version이 아니라 위에서 결정한 값을 쓴다.
+            // 그래야 CI에서 태그 버전이 모드 메타데이터에도 반영된다.
+            mod_version            : resolvedModVersion,
+    ]
+    inputs.properties replaceProperties
+    // 템플릿을 UTF-8로 읽고 쓴다. 지정하지 않으면 플랫폼 기본 인코딩(Windows는 CP949)이
+    // 쓰여서 템플릿 안의 한글 설명문이 깨진 채로 jar에 들어간다.
+    filteringCharset = 'UTF-8'
+    expand replaceProperties
+    from "src/main/templates"
+    into "build/generated/sources/modMetadata"
+}
+sourceSets.main.resources.srcDir generateModMetadata
+neoForge.ideSyncTask generateModMetadata
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+idea {
+    module {
+        downloadSources = true
+        downloadJavadoc = true
+    }
+}
