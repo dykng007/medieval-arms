@@ -34,9 +34,21 @@ CurseForge 작성자 포털에 로그인한다. 두 곳이 있는데 어느 쪽�
 | Source URL | https://github.com/dykng007/medieval-arms |
 | Issues URL | https://github.com/dykng007/medieval-arms/issues |
 
-**프로젝트 아이콘**은 `docs/logo.png` (400x400)를 올리면 된다.
-`tools/gen_logo.py`로 만든 것이라, 아이템 텍스처를 바꾼 뒤 그 스크립트를 다시 돌리면
-아이콘도 같이 갱신된다.
+### 이미지 두 종류를 헷갈리지 말 것
+
+CurseForge 제출 화면의 **Logo** 항목은 정사각 아이콘이 아니라 **가로로 긴 배너**다.
+화면에 적힌 조건이 `PNG,WEBP / 100KB / 104x40` 이다. 정사각 이미지를 넣으면 거부된다.
+
+| 쓰는 곳 | 파일 | 크기 | 만드는 스크립트 |
+|---|---|---|---|
+| 제출 화면의 **Logo** | `docs/banner.png` | 104x40 | `tools/gen_banner.py` |
+| 프로젝트 **아바타** | `docs/avatar.png` | 800x800 | `tools/gen_logo.py` |
+
+아바타 쪽 조건은 최소 400x400에 가로세로가 같아야 하고, 더 크면 알아서 축소된다.
+webp는 제출 시 Internal Server Error가 나므로 쓰지 않는다.
+
+두 스크립트 모두 `gen_textures.py`의 장검 스프라이트를 그대로 확대해 쓴다.
+아이템 텍스처를 바꾼 뒤 다시 돌리면 이미지도 같이 갱신된다.
 
 **설명(Description)** 란에는 아래 정도면 충분하다.
 

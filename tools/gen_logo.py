@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """
-CurseForge 프로젝트 아이콘을 만든다.
+CurseForge 프로젝트 아바타(정사각 아이콘)를 만든다.
 
 실행:  python tools/gen_logo.py
-결과:  docs/logo.png (400x400)
+결과:  docs/avatar.png (800x800)
 
-CurseForge 프로젝트 페이지의 아바타로 쓴다. 권장 크기가 400x400이다.
+프로젝트 페이지의 정사각 아바타용이다. CurseForge는 최소 400x400, 1:1을 요구한다.
+제출 화면의 Logo 항목은 이것이 아니라 104x40 배너다 — tools/gen_banner.py 를 쓴다.
 장검 스프라이트를 그대로 확대해 쓰므로, 아이템 텍스처를 바꾸면
 이 스크립트를 다시 돌리는 것만으로 아이콘도 따라 바뀐다.
 
@@ -25,7 +26,7 @@ from gen_textures import PALETTE, SPRITES  # noqa: E402
 # CurseForge 요구사항: 최소 400x400, 가로세로 같은 비율(1:1).
 # 더 크면 알아서 축소되므로 넉넉하게 800으로 만든다.
 SIZE = 800
-OUT = os.path.join(ROOT, "docs", "logo.png")
+OUT = os.path.join(ROOT, "docs", "avatar.png")
 
 # 배경: 어두운 석재 느낌의 세로 그라데이션
 BG_TOP = (58, 62, 70)
