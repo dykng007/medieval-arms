@@ -1,0 +1,17 @@
+{
+  "item.medievalarms.battleaxe": "전투도끼",
+  "item.medievalarms.halberd": "미늘창",
+  "item.medievalarms.knight_boots": "기사 장화",
+  "item.medievalarms.knight_chestplate": "기사 흉갑",
+  "item.medievalarms.knight_helmet": "기사 투구",
+  "item.medievalarms.knight_leggings": "기사 각반",
+  "item.medievalarms.longsword": "장검",
+  "item.medievalarms.mace": "철퇴",
+  "item.medievalarms.spear": "창",
+  "item.medievalarms.squire_boots": "종자 장화",
+  "item.medievalarms.squire_chestplate": "종자 흉갑",
+  "item.medievalarms.squire_helmet": "종자 투구",
+  "item.medievalarms.squire_leggings": "종자 각반",
+  "item.medievalarms.warhammer": "워해머",
+  "itemGroup.medievalarms.main": "중세 무기고"
+}

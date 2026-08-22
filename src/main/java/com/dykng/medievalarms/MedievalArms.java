@@ -1,17 +1,24 @@
 package com.dykng.medievalarms;
 
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.ModContainer;
-import org.slf4j.Logger;
+import com.dykng.medievalarms.registry.ModArmorMaterials;
+import com.dykng.medievalarms.registry.ModCreativeTabs;
+import com.dykng.medievalarms.registry.ModItems;
+
 import com.mojang.logging.LogUtils;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.common.Mod;
+import org.slf4j.Logger;
 
 /**
  * 모드의 진입점.
  *
- * <p>NeoForge는 {@code @Mod} 애노테이션이 붙은 클래스를 찾아, 아래 생성자를 딱 한 번 호출한다.
- * 생성자에서 하는 일은 "등록기(DeferredRegister)들을 이벤트 버스에 연결"하는 것뿐이다.
- * 실제 아이템 목록 같은 내용물은 각 registry 클래스가 들고 있다.
+ * <p>NeoForge는 {@code @Mod} 애노테이션이 붙은 이 클래스를 찾아 생성자를 딱 한 번 호출한다.
+ * 생성자가 하는 일은 각 등록기를 이벤트 버스에 연결하는 것뿐이다. 실제 내용물은
+ * {@code registry} 패키지의 클래스들이 들고 있다.
+ *
+ * <p>등록기를 버스에 붙여두면, NeoForge가 적절한 시점에 "이제 아이템을 등록하라"는 이벤트를
+ * 쏘고 등록기가 알아서 반응한다. 그래서 여기서 등록 순서를 신경 쓸 필요가 없다.
  */
 @Mod(MedievalArms.MOD_ID)
 public class MedievalArms {
@@ -25,7 +32,10 @@ public class MedievalArms {
     private static final Logger LOGGER = LogUtils.getLogger();
 
     public MedievalArms(IEventBus modEventBus, ModContainer modContainer) {
-        LOGGER.info("Medieval Arms 로딩 시작");
-        // 콘텐츠 등록은 M1에서 여기에 연결한다.
+        ModArmorMaterials.ARMOR_MATERIALS.register(modEventBus);
+        ModItems.ITEMS.register(modEventBus);
+        ModCreativeTabs.TABS.register(modEventBus);
+
+        LOGGER.info("Medieval Arms: 아이템 {}개 등록 예약됨", ModItems.all().size());
     }
 }

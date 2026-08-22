@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "L": {
+      "item": "minecraft:leather"
+    },
+    "M": {
+      "item": "minecraft:diamond"
+    }
+  },
+  "pattern": [
+    "M M",
+    "MLM"
+  ],
+  "result": {
+    "count": 1,
+    "id": "medievalarms:knight_boots"
+  }
+}

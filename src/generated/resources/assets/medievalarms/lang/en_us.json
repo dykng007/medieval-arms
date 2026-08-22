@@ -1,0 +1,17 @@
+{
+  "item.medievalarms.battleaxe": "Battleaxe",
+  "item.medievalarms.halberd": "Halberd",
+  "item.medievalarms.knight_boots": "Knight Boots",
+  "item.medievalarms.knight_chestplate": "Knight Chestplate",
+  "item.medievalarms.knight_helmet": "Knight Helmet",
+  "item.medievalarms.knight_leggings": "Knight Leggings",
+  "item.medievalarms.longsword": "Longsword",
+  "item.medievalarms.mace": "Mace",
+  "item.medievalarms.spear": "Spear",
+  "item.medievalarms.squire_boots": "Squire Boots",
+  "item.medievalarms.squire_chestplate": "Squire Chestplate",
+  "item.medievalarms.squire_helmet": "Squire Helmet",
+  "item.medievalarms.squire_leggings": "Squire Leggings",
+  "item.medievalarms.warhammer": "Warhammer",
+  "itemGroup.medievalarms.main": "Medieval Arms"
+}
