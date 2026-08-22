@@ -1,54 +1,95 @@
 # CurseForge 업로드 연결하기
 
-릴리스 워크플로는 이미 CurseForge 업로드까지 포함해 작성되어 있다.
-다만 **시크릿 두 개가 등록되기 전까지는 CurseForge 단계를 조용히 건너뛴다.**
-따라서 아래 절차는 급하지 않으며, 준비되면 그때 하면 된다. 워크플로 파일은 고칠 필요가 없다.
+릴리스 워크플로에는 CurseForge 업로드가 이미 들어가 있다.
+다만 **시크릿 두 개가 등록되기 전까지는 그 단계를 조용히 건너뛴다.**
+그래서 아래 절차는 급하지 않고, 준비되면 그때 하면 된다. 워크플로 파일은 고칠 필요가 없다.
 
-## 왜 자동으로 못 만드는가
+## 왜 이 부분만 손으로 해야 하는가
 
 CurseForge 업로드 API는 `POST /api/projects/{projectId}/upload-file` 하나뿐이고,
-**이미 존재하고 승인까지 끝난 프로젝트에만** 파일을 올릴 수 있다.
-프로젝트 생성 자체는 API가 없고, 만든 뒤에도 CurseForge 스태프의 수동 승인을 기다려야 한다.
-그래서 이 부분만은 사람이 한 번 해줘야 한다.
+**이미 존재하는 프로젝트에만** 파일을 올릴 수 있다.
+프로젝트를 만드는 API는 없고, 만든 뒤에도 CurseForge 쪽 검토를 기다려야 한다.
+그래서 프로젝트 생성만은 사람이 웹에서 한 번 해줘야 한다.
 
-## 절차
+---
 
-### 1. 프로젝트 생성
+## 1. 프로젝트 만들기
 
-<https://legacy.curseforge.com/minecraft/mc-mods> 에서 로그인 후 프로젝트를 만든다.
-입력할 값:
+CurseForge 작성자 포털에 로그인한다. 두 곳이 있는데 어느 쪽이든 된다.
 
-- **Name**: Medieval Arms
-- **Summary**: 중세 무기와 갑옷을 추가하고, 무기 종류별로 휘두르는 모션이 달라지는 모드
-- **Category**: Armor, Tools, and Weapons
-- **License**: MIT
-- **Source URL**: https://github.com/dykng007/medieval-arms
-- **Issues URL**: https://github.com/dykng007/medieval-arms/issues
+- 구버전 포털: <https://authors-old.curseforge.com/> (Twitch 계정으로 로그인)
+- 신버전 콘솔: <https://console.curseforge.com/>
 
-제출하면 승인 대기 상태가 된다. 보통 1~2일 걸린다.
+로그인 후 Minecraft → Create Project 로 들어가 아래 값을 넣는다.
+그대로 복사해 쓰면 된다.
 
-### 2. Project ID 확인
+| 항목 | 값 |
+|---|---|
+| Name | `Medieval Arms` |
+| Summary | 중세 무기와 갑옷을 추가합니다. 무기 종류에 따라 휘두르는 모션이 달라집니다. |
+| Category | Armor, Tools, and Weapons |
+| Game Versions | 1.21.1 |
+| Mod Loader | NeoForge |
+| License | MIT |
+| Source URL | https://github.com/dykng007/medieval-arms |
+| Issues URL | https://github.com/dykng007/medieval-arms/issues |
 
-승인되면 프로젝트 페이지 오른쪽 "About Project" 박스에 **Project ID**가 숫자로 표시된다.
-(주소창의 슬러그가 아니라 이 숫자여야 한다.)
+**프로젝트 아이콘**은 `docs/logo.png` (400x400)를 올리면 된다.
+`tools/gen_logo.py`로 만든 것이라, 아이템 텍스처를 바꾼 뒤 그 스크립트를 다시 돌리면
+아이콘도 같이 갱신된다.
 
-### 3. API 토큰 발급
+**설명(Description)** 란에는 아래 정도면 충분하다.
 
-<https://legacy.curseforge.com/account/api-tokens> 에서 새 토큰을 만든다.
-**토큰은 발급 직후 한 번만 보여진다.** 이 화면을 벗어나기 전에 복사해 둔다.
+```
+중세 무기와 갑옷을 추가하는 모드입니다.
 
-### 4. GitHub 시크릿 등록
+무기 6종
+- 창 / 미늘창 / 철퇴 / 전투도끼 / 워해머 / 장검
+- 무기마다 공격력, 공격 속도, 닿는 거리가 다릅니다.
+- 창과 미늘창은 더 멀리 닿습니다.
 
-저장소 폴더에서:
+갑옷 2세트
+- 종자 갑옷 (철 등급)
+- 기사 갑옷 (다이아 등급, 넉백 저항 있음)
+
+무기 종류에 따라 휘두르는 모션이 달라집니다.
+창은 앞으로 내지르고, 철퇴는 위에서 아래로 내리치고,
+미늘창은 옆으로 크게 후립니다.
+
+다른 모드에 의존하지 않습니다. 이 파일 하나만 넣으면 동작합니다.
+```
+
+제출하면 검토 대기 상태가 된다. 보통 하루이틀 걸린다.
+
+## 2. Project ID 확인
+
+승인되면 프로젝트 페이지 오른쪽 "About Project" 상자에 **Project ID**가 숫자로 표시된다.
+주소창의 슬러그(`medieval-arms` 같은 글자)가 아니라 **숫자**여야 한다.
+
+## 3. API 토큰 발급
+
+<https://authors-old.curseforge.com/account/api-tokens> 에서 새 토큰을 만든다.
+
+**토큰은 발급 직후 한 번만 보인다.** 화면을 벗어나기 전에 복사해 둔다.
+
+## 4. GitHub 시크릿 등록
+
+저장소 폴더에서 아래 두 줄을 실행하고, 각각 프롬프트에 값을 붙여넣는다.
 
 ```bash
-gh secret set CURSEFORGE_ID     # 프롬프트에 Project ID 숫자를 붙여넣는다
-gh secret set CURSEFORGE_TOKEN  # 프롬프트에 API 토큰을 붙여넣는다
+gh secret set CURSEFORGE_ID      # 2번에서 확인한 숫자
+gh secret set CURSEFORGE_TOKEN   # 3번에서 발급한 토큰
 ```
 
 웹에서 하려면 저장소 → Settings → Secrets and variables → Actions → New repository secret.
 
-### 5. 확인
+등록 여부만 확인하려면 (값은 보이지 않는다):
+
+```bash
+gh secret list
+```
+
+## 5. 확인
 
 다음 태그를 밀면 CurseForge에도 올라간다.
 
@@ -57,11 +98,12 @@ git tag v0.1.1
 git push origin v0.1.1
 ```
 
-Actions 로그의 Publish 단계에서 CurseForge 파일 링크가 출력되면 성공이다.
+Actions 로그의 Publish 단계에 CurseForge 파일 링크가 찍히면 성공이다.
+시크릿이 없을 때는 그 줄 없이 GitHub 발행만 하고 넘어간다.
 
 ## 참고
 
-- 첫 업로드는 CurseForge가 파일 자체도 한 번 검토할 수 있어 즉시 공개되지 않을 수 있다.
-- 나중에 Modrinth에도 올리고 싶다면 `MODRINTH_ID` / `MODRINTH_TOKEN` 시크릿을 추가하고
-  `release.yml`의 Publish 단계에 `modrinth-id` / `modrinth-token` 두 줄만 넣으면 된다.
-  Modrinth는 CurseForge와 달리 승인 절차가 없어 훨씬 간단하다.
+- 첫 업로드는 CurseForge가 파일 자체도 한 번 검토할 수 있어 곧바로 공개되지 않을 수 있다.
+- Modrinth에도 올리고 싶다면 승인 절차가 없어 훨씬 간단하다.
+  `MODRINTH_ID` / `MODRINTH_TOKEN` 시크릿을 추가하고 `release.yml`의 Publish 단계에
+  `modrinth-id` / `modrinth-token` 두 줄만 넣으면 된다.
