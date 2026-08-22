@@ -15,13 +15,23 @@ CurseForge 업로드 API는 `POST /api/projects/{projectId}/upload-file` 하나�
 
 ## 1. 프로젝트 만들기
 
-CurseForge 작성자 포털에 로그인한다. 두 곳이 있는데 어느 쪽이든 된다.
+**주소를 정확히 확인할 것.** CurseForge에는 비슷하게 생긴 사이트가 둘 있는데
+용도가 완전히 다르다. 실제로 이걸 헷갈려서 한참 헤맸다.
 
-- 구버전 포털: <https://authors-old.curseforge.com/> (Twitch 계정으로 로그인)
-- 신버전 콘솔: <https://console.curseforge.com/>
+| 사이트 | 누구를 위한 곳인가 |
+|---|---|
+| **authors**.curseforge.com | **모드 제작자.** 여기가 우리가 쓸 곳이다 |
+| **console**.curseforge.com | 게임 개발사. 자기 *게임*을 CurseForge에 등록하는 곳 |
 
-로그인 후 Minecraft → Create Project 로 들어가 아래 값을 넣는다.
-그대로 복사해 쓰면 된다.
+스튜디오 콘솔에 들어가면 게임과 카테고리를 편집하는 화면이 나오는데,
+거기 보이는 숫자는 게임 ID이지 프로젝트 ID가 아니다. 거기 있는 Logo 항목도
+게임 로고라 모드 아이콘 규격과 다르다.
+
+모드 프로젝트는 아래 주소에서 만든다.
+
+    https://authors.curseforge.com/#/projects/create/choose-game
+
+게임으로 **Minecraft**를 고른 뒤 아래 값을 넣는다. 그대로 복사해 쓰면 된다.
 
 | 항목 | 값 |
 |---|---|
@@ -75,12 +85,22 @@ webp는 제출 시 Internal Server Error가 나므로 쓰지 않는다.
 
 ## 2. Project ID 확인
 
-승인되면 프로젝트 페이지 오른쪽 "About Project" 상자에 **Project ID**가 숫자로 표시된다.
+두 가지 방법이 있다.
+
+**승인 전** — 작성자 포털에서 프로젝트를 열면 주소가 이렇게 된다.
+
+    https://authors.curseforge.com/#/projects/1234567
+                                              ^^^^^^^ 이 숫자
+
+**승인 후** — 공개 페이지의 Details 상자에 `Project ID` 항목으로 표시된다.
+
 주소창의 슬러그(`medieval-arms` 같은 글자)가 아니라 **숫자**여야 한다.
+틀린 숫자를 넣으면 업로드가 `errorCode 1005 — Invalid projectID` 로 거부된다.
 
 ## 3. API 토큰 발급
 
 <https://authors-old.curseforge.com/account/api-tokens> 에서 새 토큰을 만든다.
+(토큰 페이지는 아직 구버전 포털에 있다. 스튜디오 콘솔이 아니다.)
 
 **토큰은 발급 직후 한 번만 보인다.** 화면을 벗어나기 전에 복사해 둔다.
 
