@@ -22,12 +22,14 @@ sys.path.insert(0, os.path.join(ROOT, "tools"))
 
 from gen_textures import PALETTE, SPRITES  # noqa: E402
 
-SIZE = 400
+# CurseForge 요구사항: 최소 400x400, 가로세로 같은 비율(1:1).
+# 더 크면 알아서 축소되므로 넉넉하게 800으로 만든다.
+SIZE = 800
 OUT = os.path.join(ROOT, "docs", "logo.png")
 
 # 배경: 어두운 석재 느낌의 세로 그라데이션
 BG_TOP = (58, 62, 70)
-BG_BOTTOM = (34, 36, 42)
+BG_BOTTOM = (30, 32, 38)
 BORDER = (150, 158, 166)
 
 
@@ -42,7 +44,9 @@ def write_png(path, width, height, pixels):
         body = tag + data
         return struct.pack(">I", len(data)) + body + struct.pack(">I", zlib.crc32(body) & 0xFFFFFFFF)
 
-    png = b"\x89PNG\r\n\x1a\n"
+    # PNG 시그니처. 이스케이프 문자가 도중에 풀리는 사고를 막으려고
+    # 바이트 값을 직접 적는다.
+    png = bytes([137, 80, 78, 71, 13, 10, 26, 10])
     png += chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0))
     png += chunk(b"IDAT", zlib.compress(bytes(raw), 9))
     png += chunk(b"IEND", b"")
@@ -51,37 +55,51 @@ def write_png(path, width, height, pixels):
         f.write(png)
 
 
+def blit(pixels, grid, scale, ox, oy, mirror=False, dim=1.0):
+    """
+    스프라이트를 확대해 캔버스에 찍는다.
+
+    mirror=True 면 좌우를 뒤집는다. 두 무기를 X자로 겹치려면 하나는 뒤집어야 한다.
+    dim 은 밝기 배수. 뒤에 깔리는 무기를 살짝 어둡게 해 앞뒤를 구분한다.
+    """
+    for sy, row in enumerate(grid):
+        cells = list(row)
+        if mirror:
+            cells.reverse()
+        for sx, ch in enumerate(cells):
+            r, g, b, a = PALETTE[ch]
+            if a == 0:
+                continue
+            r, g, b = (int(v * dim) for v in (r, g, b))
+            for dy in range(scale):
+                for dx in range(scale):
+                    px = ox + sx * scale + dx
+                    py = oy + sy * scale + dy
+                    if 0 <= px < SIZE and 0 <= py < SIZE:
+                        pixels[py * SIZE + px] = (r, g, b, 255)
+
+
 def main():
     pixels = []
     for y in range(SIZE):
         t = y / (SIZE - 1)
         base = tuple(int(BG_TOP[i] + (BG_BOTTOM[i] - BG_TOP[i]) * t) for i in range(3))
         for x in range(SIZE):
-            # 바깥쪽 테두리
             edge = min(x, y, SIZE - 1 - x, SIZE - 1 - y)
-            if edge < 6:
+            if edge < 12:
                 pixels.append(BORDER + (255,))
-            elif edge < 10:
+            elif edge < 20:
                 pixels.append((base[0] // 2, base[1] // 2, base[2] // 2, 255))
             else:
                 pixels.append(base + (255,))
 
-    # 장검 스프라이트를 확대해 가운데 배치.
-    # 16px 스프라이트에 24배를 곱해 384px, 양옆에 8px씩 여백이 남는다.
-    grid = SPRITES["longsword"]
-    scale = 24
-    offset = (SIZE - 16 * scale) // 2
-    for sy, row in enumerate(grid):
-        for sx, ch in enumerate(row):
-            r, g, b, a = PALETTE[ch]
-            if a == 0:
-                continue
-            for dy in range(scale):
-                for dx in range(scale):
-                    px = offset + sx * scale + dx
-                    py = offset + sy * scale + dy
-                    if 0 <= px < SIZE and 0 <= py < SIZE:
-                        pixels[py * SIZE + px] = (r, g, b, 255)
+    # 장검 하나만 크게 얹는다.
+    # 도끼를 뒤집어 X자로 겹쳐도 봤는데, 16x16 스프라이트 두 장이 겹치니
+    # 뒤에 깔린 날이 배경 상자처럼 보여 오히려 알아보기 어려웠다.
+    scale = 48
+    span = 16 * scale
+    offset = (SIZE - span) // 2
+    blit(pixels, SPRITES["longsword"], scale, offset, offset)
 
     write_png(OUT, SIZE, SIZE, pixels)
     print("생성:", os.path.relpath(OUT, ROOT), "(%dx%d)" % (SIZE, SIZE))
