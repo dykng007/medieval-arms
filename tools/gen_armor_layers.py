@@ -21,6 +21,15 @@
 거의 없었다. 그래서 음영을 계산하지 않고 판 그림 자체에 그려진 것을 쓴다.
 art/armor-panels.png 의 여섯 판은 전부 원통에 빛이 닿은 것처럼 칠해져 있다.
 
+── 앞판과 뒤판의 띠 높이를 맞추는 이유 ───────────────────────────────
+한 부위의 네 옆면은 몸을 한 바퀴 두른다. 앞판의 금색 띠가 세로 89% 지점에
+있는데 뒤판의 띠가 96% 지점에 있으면, 캐릭터를 돌려볼 때 모서리에서 띠가
+툭 끊겨 보인다. 실제로 그래서 "모서리가 따로 논다"는 문제가 있었다.
+
+판은 각각 그려지므로 띠 높이가 저절로 맞지 않는다. make_back() 이 앞판을 바탕으로
+삼고 가운데 장식 구간만 뒤판의 민판으로 갈아끼운다. 띠는 앞판 것이 그대로 남으니
+높이가 어긋날 수가 없다. 팔과 다리는 앞뒤가 같은 판이라 애초에 문제가 없다.
+
 판을 다시 뽑을 때는 반드시 이렇게 요청해야 한다.
   - 여섯 판을 한 줄로, 사이를 넉넉히 띄우고, 배경은 투명하게
   - 각 판은 구멍 없이 꽉 찬 직사각형
@@ -122,7 +131,64 @@ def load_panels():
         # 원통 뚜껑처럼 그려진 위아래 끝을 잘라낸다.
         piece = piece[int(h * TRIM_TOP):h - int(h * TRIM_BOTTOM)]
         panels[name] = Image.fromarray(piece, "RGBA")
+
+    # 뒷면은 앞판을 바탕으로 가운데만 갈아끼워 만든다. 띠 높이가 어긋나지 않게 하려는 것.
+    for part in ("helm", "chest"):
+        panels[part + "_back"] = make_back(panels[part + "_front"],
+                                           panels[part + "_back"],
+                                           BACK_KEEP[part])
     return panels
+
+
+def detect_bands(panel):
+    """판에서 금색 띠가 세로 몇 지점(0~1)에 있는지 찾는다."""
+    arr = np.array(panel)
+    rgb = arr[:, :, :3].astype(np.int16)
+    gold = ((rgb[:, :, 0] - rgb[:, :, 2]) > 40) & (rgb[:, :, 0] > 110) & (arr[:, :, 3] > 128)
+    frac = gold.mean(axis=1)
+    h = len(frac)
+
+    bands, start = [], None
+    for i in range(h):
+        hit = frac[i] > 0.35
+        if hit and start is None:
+            start = i
+        elif not hit and start is not None:
+            if i - start >= 2:
+                bands.append((start + i) / 2.0 / h)
+            start = None
+    if start is not None and h - start >= 2:
+        bands.append((start + h) / 2.0 / h)
+    return bands
+
+
+# 뒷면을 만들 때 앞판에서 그대로 가져올 세로 구간의 바깥쪽 경계.
+# 이 범위 '밖'(위아래 끝)은 앞판을 쓰고, 안쪽 가운데만 뒤판으로 갈아끼운다.
+# 그래서 목깃과 허리띠 같은 띠는 앞뒤가 정확히 같은 높이에 온다.
+BACK_KEEP = {
+    "helm": (0.16, 0.78),    # 위 테두리와 목 띠는 앞판 것을 쓰고, 바이저만 지운다
+    "chest": (0.22, 0.90),   # 목깃과 허리띠는 앞판 것을 쓰고, 가슴 장식만 지운다
+}
+
+
+def make_back(front, back, keep):
+    """
+    뒷면 판을 만든다.
+
+    뒤판을 그대로 쓰면 띠 높이가 앞판과 달라 몸을 돌릴 때 모서리에서 끊긴다.
+    판을 늘려 맞추는 것도 해봤는데, 가장자리에 붙은 띠가 뭉개져 완전히는 맞지 않았다.
+
+    그래서 앞판을 바탕으로 삼고 가운데 장식 구간만 뒤판의 민판으로 갈아끼운다.
+    띠는 앞판 것이 그대로 남으므로 높이가 어긋날 수가 없다.
+    """
+    w, h = front.size
+    out = front.copy()
+    y0, y1 = int(h * keep[0]), int(h * keep[1])
+    if y1 <= y0:
+        return out
+    plain = back.resize((w, h), Image.NEAREST).crop((0, y0, w, y1))
+    out.paste(plain, (0, y0))
+    return out
 
 
 def face_size(face, top_ratio=0.0):
