@@ -3,18 +3,20 @@
 갑옷을 입었을 때 몸에 씌워지는 레이어 텍스처를 만든다.
 
 실행:  python tools/gen_armor_layers.py
-입력:  art/plate-material.png   판금 재질 (이음새 없이 반복되는 그림)
-출력:  .../textures/models/armor/<세트>_layer_1.png, _layer_2.png
+입력:  .../textures/item/squire_{helmet,chestplate,leggings,boots}.png
+출력:  .../textures/models/armor/<세트>_layer_{1,2}.png
 
 필요:  pip install pillow numpy
 
-── 왜 그림을 그대로 못 쓰는가 ──────────────────────────────────────────
-레이어 텍스처는 갑옷 '그림'이 아니라 플레이어 모델에 감기는 UV 전개도다.
-정해진 칸마다 어느 면이 오는지가 고정되어 있어서, 갑옷처럼 생긴 그림을
-통째로 넣으면 몸에 엉뚱하게 발린다. 그래서 재질만 그림으로 받고
-칸 배치는 여기서 계산한다.
+── 왜 아이템 아이콘에서 떠오는가 ──────────────────────────────────────
+앞서는 판금 재질을 칸마다 타일링해 만들었는데, 무늬만 있고 형태가 없어서
+아이콘에 비해 초라해 보였다. 아이콘 쪽은 견갑과 바이저와 무릎받이가 그려진
+조각된 갑옷인데, 착용 텍스처는 그냥 줄무늬 통이었던 셈이다.
 
-── 어느 레이어가 어느 부위를 그리는가 ─────────────────────────────────
+아이콘 자체가 갑옷의 정면도이므로, 거기서 부위를 떼어 몸의 해당 면에 붙인다.
+그러면 인벤토리에서 본 그림과 입었을 때가 같은 갑옷으로 보인다.
+
+── 어느 레이어가 어느 부위를 그리는가 ────────────────────────────────
 HumanoidArmorLayer.setPartVisibility 를 그대로 옮긴 것이다.
 
     투구  head + hat       layer_1
@@ -22,12 +24,11 @@ HumanoidArmorLayer.setPartVisibility 를 그대로 옮긴 것이다.
     각반  body + 양다리    layer_2
     장화  양다리           layer_1
 
-장화와 흉갑이 같은 layer_1 을 쓰기 때문에, 다리 칸을 위까지 꽉 채우면
-장화를 신었는데 정강이받이처럼 보인다. 그래서 다리 칸은 아래쪽만 채운다.
-반대로 각반(layer_2)은 다리를 끝까지 채우고 몸통은 허리만 채운다.
+hat 칸은 비워둔다. 바닐라 갑옷도 비워두는데, 채우면 투구 바깥에 껍데기가
+한 겹 더 생겨 부풀어 보인다.
 
-예전 버전은 layer_1 에 다리 칸이 아예 없어서 장화를 신어도 아무것도
-보이지 않았다.
+장화와 흉갑이 같은 layer_1 을 쓰기 때문에 다리 칸을 위까지 채우면 장화가
+정강이받이처럼 보인다. 그래서 다리 칸은 아래쪽만 채운다.
 """
 
 import os
@@ -40,7 +41,7 @@ except ImportError as exc:
     sys.exit("필요한 패키지가 없습니다: %s\n  pip install pillow numpy" % exc.name)
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-MATERIAL = os.path.join(ROOT, "art", "plate-material.png")
+ITEMS = os.path.join(ROOT, "src", "main", "resources", "assets", "medievalarms", "textures", "item")
 OUT = os.path.join(ROOT, "src", "main", "resources", "assets", "medievalarms", "textures", "models", "armor")
 
 # 바닐라 레이어는 64x32. 아이템 아이콘이 32x32(바닐라의 2배)라 여기도 2배로 맞춘다.
@@ -48,119 +49,157 @@ OUT = os.path.join(ROOT, "src", "main", "resources", "assets", "medievalarms", "
 SCALE = 2
 WIDTH, HEIGHT = 64 * SCALE, 32 * SCALE
 
+# 크롭에 구멍이 있어도 갑옷이 뚫려 보이지 않도록 깔아두는 바탕 강판 색.
+BASE_LIGHT = (196, 202, 210)
+BASE_DARK = (92, 98, 108)
+
 
 def faces(u, v, w, h, d):
-    """
-    상자 하나의 UV 전개도. 마인크래프트가 정한 배치이고 바꿀 수 없다.
-    돌려주는 값은 (이름, x, y, 너비, 높이).
-    """
-    return [
-        ("top",    u + d,         v,     w, d),
-        ("bottom", u + d + w,     v,     w, d),
-        ("right",  u,             v + d, d, h),
-        ("front",  u + d,         v + d, w, h),
-        ("left",   u + d + w,     v + d, d, h),
-        ("back",   u + d + w + d, v + d, w, h),
-    ]
+    """상자 하나의 UV 전개도. 마인크래프트가 정한 배치이고 바꿀 수 없다."""
+    return {
+        "top":    (u + d,         v,     w, d),
+        "bottom": (u + d + w,     v,     w, d),
+        "right":  (u,             v + d, d, h),
+        "front":  (u + d,         v + d, w, h),
+        "left":   (u + d + w,     v + d, d, h),
+        "back":   (u + d + w + d, v + d, w, h),
+    }
 
 
 # HumanoidModel.createMesh 의 texOffs / addBox 값 그대로.
 PARTS = {
     "head": faces(0, 0, 8, 8, 8),
-    "hat":  faces(32, 0, 8, 8, 8),
     "body": faces(16, 16, 8, 12, 4),
     "arm":  faces(40, 16, 4, 12, 4),
     "leg":  faces(0, 16, 4, 12, 4),
 }
 
-# 세트별 색. 강철을 이 색조로 물들인다.
+# 아이콘에서 떼어낼 영역. 32x32 아이콘 안의 (좌, 상, 우, 하).
+# 아이콘 위에 격자를 그려 눈으로 고른 값이다.
+CROPS = {
+    "helmet_front":  (5, 2, 27, 29),    # 투구 정면 전체 (십자 장식과 바이저)
+    "helmet_side":   (7, 4, 17, 29),    # 옆면용. 십자 세로줄을 피한 왼쪽 절반
+    "helmet_top":    (7, 2, 25, 10),    # 정수리
+    "chest_front":   (10, 4, 22, 28),   # 견갑을 뺀 가운데 몸통
+    "chest_side":    (11, 6, 16, 28),   # 몸통 옆면용 좁은 띠
+    "chest_top":     (10, 3, 22, 9),    # 목깃
+    "pauldron":      (3, 3, 13, 18),    # 왼쪽 견갑
+    "leg_front":     (7, 3, 16, 30),    # 각반 왼쪽 다리
+    "belt":          (7, 1, 25, 8),     # 각반 허리띠
+    "boot":          (3, 11, 15, 29),   # 장화 한 짝의 아래쪽
+}
+
 SETS = {
-    "squire": {"tint": None},                       # 강철 그대로
-    "knight": {"tint": (0.58, 0.86, 1.00)},         # 다이아 등급이라 청색
+    "squire": None,                 # 강철 그대로
+    "knight": (0.58, 0.86, 1.00),   # 다이아 등급이라 청색
 }
 
 
-def load_material():
-    img = Image.open(MATERIAL).convert("RGB")
-    # 재질이 너무 크면 한 칸에 무늬가 하나도 안 들어간다. 칸 크기에 맞게 줄인다.
-    side = 32 * SCALE
-    return np.array(img.resize((side, side), Image.LANCZOS)).astype(np.float32)
+def load_icons():
+    icons = {}
+    for name in ("helmet", "chestplate", "leggings", "boots"):
+        path = os.path.join(ITEMS, "squire_%s.png" % name)
+        if not os.path.exists(path):
+            return None
+        icons[name] = Image.open(path).convert("RGBA")
+    return icons
 
 
-SIDE_FACES = ("right", "front", "left", "back")
+def base_plate(w, h):
+    """면을 채울 바탕. 위가 밝고 아래가 어두워 입체감이 생긴다."""
+    img = Image.new("RGBA", (w, h))
+    px = img.load()
+    for y in range(h):
+        t = y / max(1, h - 1)
+        c = tuple(int(BASE_LIGHT[i] + (BASE_DARK[i] - BASE_LIGHT[i]) * t) for i in range(3))
+        for x in range(w):
+            px[x, y] = c + (255,)
+    return img
 
 
-def fill(canvas, mat, x, y, w, h, src_x, src_y, top_cut=0):
+def paste_face(canvas, icon, crop, face, top_ratio=0.0, dim=1.0, flip=False):
     """
-    칸 하나를 재질로 채운다.
+    아이콘의 한 부분을 몸의 한 면에 붙인다.
 
-    top_cut 은 위에서 몇 픽셀을 비울지다. 장화처럼 부위의 아래쪽만
-    덮어야 할 때 쓴다. 좌표는 전부 배율이 곱해진 값이다.
+    top_ratio 는 면의 위쪽 몇 할을 비울지다 (장화처럼 아래만 덮을 때).
+    dim 은 밝기 배수. 옆면과 뒷면을 살짝 어둡게 해 정면이 도드라지게 한다.
     """
-    mh, mw = mat.shape[:2]
-    for j in range(top_cut, h):
-        for i in range(w):
-            px = mat[(src_y + j) % mh, (src_x + i) % mw]
-            # 칸 가장자리를 살짝 어둡게 해 판과 판의 경계가 보이게 한다.
-            # 너무 세게 주면 벽돌처럼 보이므로 한 픽셀만 은은하게.
-            edge = min(i, j - top_cut, w - 1 - i, h - 1 - j)
-            shade = 0.78 if edge == 0 else 1.0
-            canvas[y + j, x + i, :3] = np.clip(px * shade, 0, 255)
-            canvas[y + j, x + i, 3] = 255
+    x, y, w, h = face
+    X, Y, W, H = x * SCALE, y * SCALE, w * SCALE, h * SCALE
+    cut = int(H * top_ratio)
+    fh = H - cut
+    if fh <= 0:
+        return
+
+    piece = icon.crop(crop)
+    if flip:
+        piece = piece.transpose(Image.FLIP_LEFT_RIGHT)
+    piece = piece.resize((W, fh), Image.NEAREST)
+
+    # 크롭에 투명한 구멍이 있어도 갑옷이 뚫려 보이지 않게 바탕을 먼저 깐다.
+    tile = base_plate(W, fh)
+    tile.alpha_composite(piece)
+
+    arr = np.array(tile).astype(np.float32)
+    if dim != 1.0:
+        arr[:, :, :3] = np.clip(arr[:, :, :3] * dim, 0, 255)
+    canvas[Y + cut:Y + H, X:X + W] = arr
 
 
-def build(parts_spec, mat):
+def build_layer_1(icons):
     canvas = np.zeros((HEIGHT, WIDTH, 4), dtype=np.float32)
-    for part, top_cut_ratio in parts_spec.items():
-        for name, x, y, w, h in PARTS[part]:
-            X, Y, W, H = x * SCALE, y * SCALE, w * SCALE, h * SCALE
+    helm, chest, boots = icons["helmet"], icons["chestplate"], icons["boots"]
 
-            # 위쪽을 비우는 건 옆면들만. 윗면/아랫면은 얇아서 그대로 둔다.
-            cut = int(H * top_cut_ratio) if (top_cut_ratio and name in SIDE_FACES) else 0
+    # 투구 — 정면은 아이콘 그대로. 뒤통수는 바이저가 있으면 안 되므로 옆면 크롭을 쓴다.
+    paste_face(canvas, helm, CROPS["helmet_front"], PARTS["head"]["front"])
+    paste_face(canvas, helm, CROPS["helmet_side"], PARTS["head"]["right"], dim=0.88)
+    paste_face(canvas, helm, CROPS["helmet_side"], PARTS["head"]["left"], dim=0.88, flip=True)
+    paste_face(canvas, helm, CROPS["helmet_side"], PARTS["head"]["back"], dim=0.80)
+    paste_face(canvas, helm, CROPS["helmet_top"], PARTS["head"]["top"])
+    paste_face(canvas, helm, CROPS["helmet_top"], PARTS["head"]["bottom"], dim=0.55)
+    # hat 칸은 일부러 비운다. 채우면 투구가 두 겹으로 부푼다.
 
-            if name in SIDE_FACES:
-                # 옆면 네 개는 세로 위치를 똑같이 맞춘다.
-                # 그래야 재질의 금색 띠가 네 면에서 같은 높이에 놓여
-                # 몸을 한 바퀴 두르는 띠처럼 이어져 보인다.
-                # 면마다 다른 높이에서 떠오면 줄무늬가 어긋나 지저분해진다.
-                src_y = 0
-                # 가로만 면마다 어긋나게 해 같은 무늬가 반복되는 티를 줄인다.
-                src_x = SIDE_FACES.index(name) * W
-            else:
-                src_x = len(part) * 3 * SCALE
-                src_y = len(part) * 5 * SCALE
+    # 흉갑
+    paste_face(canvas, chest, CROPS["chest_front"], PARTS["body"]["front"])
+    paste_face(canvas, chest, CROPS["chest_front"], PARTS["body"]["back"], dim=0.78)
+    paste_face(canvas, chest, CROPS["chest_side"], PARTS["body"]["right"], dim=0.86)
+    paste_face(canvas, chest, CROPS["chest_side"], PARTS["body"]["left"], dim=0.86, flip=True)
+    paste_face(canvas, chest, CROPS["chest_top"], PARTS["body"]["top"])
+    paste_face(canvas, chest, CROPS["chest_top"], PARTS["body"]["bottom"], dim=0.55)
 
-            fill(canvas, mat, X, Y, W, H, src_x, src_y, cut)
-            carve(canvas, part, name, X, Y, W, H)
+    # 팔 — 견갑을 팔 전체에 붙인다. 아이콘의 견갑이 위가 두툼하고 아래로
+    # 좁아지는 모양이라, 늘려도 어깨에서 소매로 이어지는 느낌이 난다.
+    for side, flip, dim in (("right", False, 1.0), ("left", True, 1.0),
+                            ("front", False, 0.94), ("back", True, 0.80)):
+        paste_face(canvas, chest, CROPS["pauldron"], PARTS["arm"][side], dim=dim, flip=flip)
+    paste_face(canvas, chest, CROPS["pauldron"], PARTS["arm"]["top"])
+    paste_face(canvas, chest, CROPS["pauldron"], PARTS["arm"]["bottom"], dim=0.55)
+
+    # 장화 — 다리 칸의 아래쪽만. 위까지 채우면 정강이받이가 된다.
+    for side, flip, dim in (("front", False, 1.0), ("right", False, 0.88),
+                            ("left", True, 0.88), ("back", True, 0.80)):
+        paste_face(canvas, boots, CROPS["boot"], PARTS["leg"][side],
+                   top_ratio=0.58, dim=dim, flip=flip)
+    paste_face(canvas, boots, CROPS["boot"], PARTS["leg"]["bottom"], dim=0.6)
     return canvas
 
 
-# 재질만 발라두면 투구가 그냥 금속 상자로 보인다.
-# 얼굴 쪽에 바이저 틈과 통기구를 파서 투구로 읽히게 한다.
-# 좌표는 각 면 안에서의 상대 위치이고 바닐라 64x32 기준이다.
-VISOR_DARK = (18, 20, 24)
+def build_layer_2(icons):
+    canvas = np.zeros((HEIGHT, WIDTH, 4), dtype=np.float32)
+    legs = icons["leggings"]
 
-FACE_DETAILS = {
-    # (부위, 면): [(면 안 x, y, 너비, 높이), ...]
-    ("head", "front"): [
-        (1, 3, 6, 1),          # 눈 틈
-        (2, 5, 1, 1), (4, 5, 1, 1), (6, 5, 1, 1),   # 숨구멍
-    ],
-    ("hat", "front"): [
-        (1, 3, 6, 1),
-    ],
-}
+    # 허리 — 몸통 칸의 아래쪽만 채워 벨트처럼 보이게 한다.
+    for side, dim in (("front", 1.0), ("back", 0.78), ("right", 0.86), ("left", 0.86)):
+        paste_face(canvas, legs, CROPS["belt"], PARTS["body"][side], top_ratio=0.58, dim=dim)
+    paste_face(canvas, legs, CROPS["belt"], PARTS["body"]["bottom"], dim=0.55)
 
-
-def carve(canvas, part, face_name, x, y, w, h):
-    """면 위에 어두운 홈을 판다. 바이저 틈처럼 재질을 덮어써야 하는 부분."""
-    for dx, dy, dw, dh in FACE_DETAILS.get((part, face_name), []):
-        for j in range(dh * SCALE):
-            for i in range(dw * SCALE):
-                px, py = x + (dx * SCALE) + i, y + (dy * SCALE) + j
-                if 0 <= px < WIDTH and 0 <= py < HEIGHT:
-                    canvas[py, px, :3] = VISOR_DARK
-                    canvas[py, px, 3] = 255
+    # 각반 — 다리 전체
+    for side, flip, dim in (("front", False, 1.0), ("right", False, 0.88),
+                            ("left", True, 0.88), ("back", True, 0.80)):
+        paste_face(canvas, legs, CROPS["leg_front"], PARTS["leg"][side], dim=dim, flip=flip)
+    paste_face(canvas, legs, CROPS["leg_front"], PARTS["leg"]["top"], dim=0.9)
+    paste_face(canvas, legs, CROPS["leg_front"], PARTS["leg"]["bottom"], dim=0.55)
+    return canvas
 
 
 def tint(canvas, factors):
@@ -174,29 +213,23 @@ def tint(canvas, factors):
 
 
 def main():
-    if not os.path.exists(MATERIAL):
-        print("재질 그림이 없습니다:", os.path.relpath(MATERIAL, ROOT))
+    icons = load_icons()
+    if icons is None:
+        print("갑옷 아이템 아이콘이 없습니다. 먼저 tools/import_art.py 를 돌리세요.")
         return 2
 
-    mat = load_material()
     os.makedirs(OUT, exist_ok=True)
-
-    # layer_1: 투구(head+hat) + 흉갑(body+arm) + 장화(leg 아래쪽만)
-    # layer_2: 각반(leg 전체 + body 허리만)
-    layers = {
-        1: {"head": 0, "hat": 0, "body": 0, "arm": 0, "leg": 0.62},
-        2: {"body": 0.60, "leg": 0},
-    }
-
-    for set_name, cfg in SETS.items():
-        for layer_no, spec in layers.items():
-            canvas = tint(build(spec, mat), cfg["tint"])
-            path = os.path.join(OUT, "%s_layer_%d.png" % (set_name, layer_no))
-            Image.fromarray(canvas.astype(np.uint8), "RGBA").save(path)
+    layers = {1: build_layer_1(icons), 2: build_layer_2(icons)}
+    for set_name, factors in SETS.items():
+        for no, canvas in layers.items():
+            path = os.path.join(OUT, "%s_layer_%d.png" % (set_name, no))
+            Image.fromarray(tint(canvas, factors).astype(np.uint8), "RGBA").save(path)
             solid = int((canvas[:, :, 3] > 0).sum())
             print("  %-22s %dx%d  채운 픽셀 %5d" % (os.path.basename(path), WIDTH, HEIGHT, solid))
 
-    print("\n갑옷 레이어 4장 생성 완료.")
+    print()
+    print("갑옷 레이어 4장 생성 완료.")
+    print("몸에 어떻게 보이는지는 tools/preview_armor.py 로 확인한다.")
     return 0
 
 
