@@ -42,3 +42,7 @@ repo/
 ### GPT 이미지 생성기 출력 ###
 # 채택한 그림은 art/ 로 옮겨 커밋한다. 여기는 시안 보관용이라 제외.
 generated-images/
+
+### Python ###
+__pycache__/
+*.pyc

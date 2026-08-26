@@ -46,7 +46,7 @@ OUT = os.path.join(ROOT, "src", "main", "resources", "assets", "medievalarms", "
 # 바닐라는 16이지만 마인크래프트는 더 큰 것도 받는다. NeoForge가 밉맵 제약까지
 # 풀어놨기 때문에(SpriteLoader의 "Do not lower the mipmap level" 패치) 32도 문제없다.
 # 16에서는 원본 그림의 세부가 너무 많이 날아가 32로 올렸다.
-# 2의 거듭제곱이어야 하고, 바꾸면 갑옷 레이어 배율(gen_textures.py)도 같이 맞춰야 한다.
+# 2의 거듭제곱이어야 하고, 바꾸면 갑옷 레이어 배율(gen_armor_layers.py 의 SCALE)도 같이 맞춰야 한다.
 SIZE = 32
 
 ALPHA_BACKGROUND = 16   # 이보다 흐리면 배경으로 본다

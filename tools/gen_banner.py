@@ -16,18 +16,23 @@ CurseForge 프로젝트 제출 화면의 Logo 항목은 정사각 아바타가 �
 오른쪽에 모드 이름을 두 줄로 넣었다. 이 크기에 쓸 만한 폰트가 없으므로
 필요한 글자(M E D I V A L R S)만 5x7 픽셀로 직접 그려 넣는다.
 
-gen_textures.py와 마찬가지로 외부 라이브러리 없이 표준 라이브러리만 쓴다.
+게임에 실제로 들어가는 장검 텍스처를 그대로 쓴다. 아이템 그림을 바꾸고
+tools/import_art.py 를 다시 돌린 뒤 이 스크립트를 실행하면 배너도 따라 바뀐다.
+
+필요:  pip install pillow
 """
 
 import os
-import struct
 import sys
-import zlib
+
+try:
+    from PIL import Image
+except ImportError:
+    sys.exit("Pillow 가 필요합니다:  pip install pillow")
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(ROOT, "tools"))
-
-from gen_textures import PALETTE, SPRITES  # noqa: E402
+ICON = os.path.join(ROOT, "src", "main", "resources", "assets", "medievalarms",
+                    "textures", "item", "longsword.png")
 
 WIDTH, HEIGHT = 104, 40
 OUT = os.path.join(ROOT, "docs", "banner.png")
@@ -53,25 +58,11 @@ FONT = {
 GLYPH_W, GLYPH_H, TRACKING = 5, 7, 1
 
 
-def write_png(path, width, height, pixels):
-    raw = bytearray()
-    for y in range(height):
-        raw.append(0)
-        for x in range(width):
-            raw.extend(pixels[y * width + x])
-
-    def chunk(tag, data):
-        body = tag + data
-        return struct.pack(">I", len(data)) + body + struct.pack(">I", zlib.crc32(body) & 0xFFFFFFFF)
-
-    # PNG 시그니처는 바이트 값으로 직접 적는다.
-    png = bytes([137, 80, 78, 71, 13, 10, 26, 10])
-    png += chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0))
-    png += chunk(b"IDAT", zlib.compress(bytes(raw), 9))
-    png += chunk(b"IEND", b"")
+def save(path, width, height, pixels):
+    img = Image.new("RGBA", (width, height))
+    img.putdata(pixels)
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, "wb") as f:
-        f.write(png)
+    img.save(path)
 
 
 def put(pixels, x, y, color):
@@ -108,26 +99,27 @@ def main():
             on_edge = x == 0 or y == 0 or x == WIDTH - 1 or y == HEIGHT - 1
             pixels.append((BORDER if on_edge else base) + (255,))
 
-    # 왼쪽: 장검 스프라이트를 2배로. 16x16 -> 32x32
-    scale = 2
-    ox, oy = 3, (HEIGHT - 16 * scale) // 2
-    for sy, row in enumerate(SPRITES["longsword"]):
-        for sx, ch in enumerate(row):
-            r, g, b, a = PALETTE[ch]
-            if a == 0:
-                continue
-            for dy in range(scale):
-                for dx in range(scale):
-                    put(pixels, ox + sx * scale + dx, oy + sy * scale + dy, (r, g, b))
+    # 왼쪽: 실제 장검 텍스처를 배너 높이에 맞춰 넣는다.
+    # 32x32 텍스처를 40픽셀 높이 배너에 넣어야 하므로 정수배가 안 나온다.
+    # 픽셀이 뭉개지지 않도록 NEAREST 로 줄인다.
+    icon_side = HEIGHT - 6
+    icon = Image.open(ICON).convert("RGBA").resize((icon_side, icon_side), Image.NEAREST)
+    ox, oy = 3, (HEIGHT - icon_side) // 2
+    ip = icon.load()
+    for iy in range(icon_side):
+        for ix in range(icon_side):
+            r, g, b, a = ip[ix, iy]
+            if a > 128:
+                put(pixels, ox + ix, oy + iy, (r, g, b))
 
     # 오른쪽: 모드 이름 두 줄. 남은 폭 가운데에 맞춘다.
-    left = ox + 16 * scale + 3
+    left = ox + icon_side + 3
     area = WIDTH - left - 2
     top = (HEIGHT - (GLYPH_H * 2 + 4)) // 2
     for i, line in enumerate(("MEDIEVAL", "ARMS")):
         draw_text(pixels, line, left + (area - text_width(line)) // 2, top + i * (GLYPH_H + 4))
 
-    write_png(OUT, WIDTH, HEIGHT, pixels)
+    save(OUT, WIDTH, HEIGHT, pixels)
     size = os.path.getsize(OUT)
     print("생성: %s (%dx%d, %d바이트)" % (os.path.relpath(OUT, ROOT), WIDTH, HEIGHT, size))
     if size > 100 * 1024:

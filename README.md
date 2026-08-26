@@ -87,13 +87,19 @@ python tools\check_swing_motions.py
 
 ```powershell
 python tools\import_art.py    # art/*.png -> 16x16 아이템 아이콘
-python tools\gen_textures.py  # 갑옷을 입었을 때 몸에 씌워지는 레이어
+python tools\gen_armor_layers.py  # 갑옷을 입었을 때 몸에 씌워지는 레이어
+python tools\preview_armor.py     # 그 레이어가 몸에 어떻게 보이는지 미리보기
 ```
 
 아이콘은 바닐라의 16x16 이 아니라 **32x32** 다. 마인크래프트는 2의 거듭제곱이면
 받아주고, NeoForge 가 `SpriteLoader` 에서 밉맵 레벨을 낮추는 바닐라 동작까지 꺼놨다.
 16x16 에서는 원본 그림의 세부가 너무 많이 날아갔다. 되돌리려면 `import_art.py` 의
-`SIZE` 를 16으로, `gen_textures.py` 의 `LAYER_SCALE` 을 1로 바꾸면 된다.
+`SIZE` 를 16으로, `gen_armor_layers.py` 의 `SCALE` 을 1로 바꾸면 된다.
+
+**갑옷을 입었을 때** 몸에 씌워지는 레이어는 별개다. 그건 갑옷 그림이 아니라
+플레이어 모델에 감기는 UV 전개도라, 칸마다 어느 면이 오는지 정해져 있다.
+그래서 `art/plate-material.png` 로 재질만 받고 배치는 `gen_armor_layers.py` 가 계산한다.
+결과가 몸에 어떻게 보이는지는 `preview_armor.py` 로 게임을 켜기 전에 확인할 수 있다.
 
 `import_art.py` 는 `art/weapons-source.png` 와 `art/armor-source.png` 를 읽어
 무기 6종과 갑옷 8개(4부위 x 2세트)를 만든다. 기사 세트는 그림을 따로 뽑지 않고
@@ -151,9 +157,10 @@ src/main/java/                자바 소스
   datagen/                      모델/레시피/태그/번역 생성기
 src/main/resources/           텍스처 등 직접 만든 리소스
 src/generated/resources/      runData가 만들어낸 JSON (커밋함)
-art/                          GPT로 그린 원본 그림 (아이콘의 출처)
+art/                          GPT로 그린 원본 그림 (아이콘과 갑옷 재질의 출처)
 tools/import_art.py           art/*.png -> 16x16 아이템 아이콘
-tools/gen_textures.py         갑옷 착용 레이어 (표준 라이브러리만)
+tools/gen_armor_layers.py     갑옷 착용 레이어 (UV 전개도에 재질 배치)
+tools/preview_armor.py        착용 모습 정면 미리보기
 tools/check_recipe_conflicts.py  레시피가 바닐라와 겹치는지 검사
 tools/check_swing_motions.py     모션이 서로 구분되는지 검사
 .github/workflows/build.yml   push/PR 마다 빌드 검사
