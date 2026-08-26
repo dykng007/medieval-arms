@@ -1,14 +1,19 @@
 #!/usr/bin/env python3
 """
-Medieval Arms 텍스처 생성기.
+갑옷을 입었을 때 몸에 덧씌워지는 레이어 텍스처를 만든다.
 
-외부 라이브러리(Pillow 등) 없이 표준 라이브러리만으로 PNG를 쓴다.
 실행:  python tools/gen_textures.py
 
-아이템 텍스처는 아래 SPRITES 딕셔너리에 16x16 ASCII 격자로 정의되어 있다.
-글자 하나가 픽셀 하나이고, 의미는 PALETTE에 있다.
-마음에 안 드는 모양은 격자 글자만 바꾸고 다시 실행하면 된다.
-직접 그린 png로 덮어써도 되고, 그 경우 이 스크립트를 다시 실행하지만 않으면 된다.
+── 이 파일이 만들지 않는 것 ────────────────────────────────────────────
+아이템 아이콘(인벤토리에 보이는 그림)은 여기서 만들지 않는다.
+그건 GPT로 그린 뒤 tools/import_art.py 가 16x16으로 변환한다.
+예전에는 여기서 ASCII 격자로 아이콘까지 그렸는데, 손으로 그린 결과가
+게임에서 알아보기 어려웠다. 그 격자와 팔레트는 레이어 텍스처의 색을
+정하는 데 아직 쓰이므로 아래 SPRITES/PALETTE 는 남겨둔다.
+
+이 파일을 실행해도 아이템 아이콘은 건드리지 않는다.
+
+외부 라이브러리 없이 표준 라이브러리만 쓴다.
 """
 
 import os
@@ -338,20 +343,6 @@ LAYER_2_RECTS = [
 def main():
     made = []
 
-    # 무기 아이템 아이콘
-    for name, grid in SPRITES.items():
-        path = os.path.join(ITEM_DIR, f"{name}.png")
-        grid_to_png(path, grid)
-        made.append(path)
-
-    # 갑옷 아이템 아이콘 (모양 4가지 x 세트 2개 = 8개)
-    for set_name, mapping in ARMOR_SETS.items():
-        for piece, shape in ARMOR_SHAPES.items():
-            grid = ["".join(mapping.get(ch, ch) for ch in row) for row in shape]
-            path = os.path.join(ITEM_DIR, f"{set_name}_{piece}.png")
-            grid_to_png(path, grid)
-            made.append(path)
-
     # 갑옷 착용 레이어 (세트당 2장)
     layer_colors = {
         "squire": (PALETTE["i"], PALETTE["s"], PALETTE["I"]),
@@ -365,7 +356,9 @@ def main():
 
     for p in made:
         print("생성:", os.path.relpath(p, ROOT))
-    print(f"\n총 {len(made)}개 텍스처 생성 완료.")
+    print()
+    print("갑옷 레이어 %d장 생성 완료." % len(made))
+    print("아이템 아이콘은 tools/import_art.py 가 담당한다.")
 
 
 if __name__ == "__main__":

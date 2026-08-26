@@ -81,9 +81,25 @@ python tools\check_swing_motions.py
 
 같은 값이 1인칭과 3인칭 양쪽에 쓰인다. 3인칭은 팔이 과장되게 꺾이지 않도록 절반만 반영된다.
 
-**텍스처를 직접 그리고 싶다면** `src/main/resources/assets/medievalarms/textures/`
-아래 png를 그냥 덮어쓰면 된다. `tools/gen_textures.py`를 다시 실행하지만 않으면
-덮어쓴 그림이 그대로 유지된다.
+### 텍스처를 바꾸려면
+
+아이템 아이콘은 GPT로 그린 그림을 줄여서 만든다. 원본은 `art/` 에 있다.
+
+```powershell
+python tools\import_art.py    # art/*.png -> 16x16 아이템 아이콘
+python tools\gen_textures.py  # 갑옷을 입었을 때 몸에 씌워지는 레이어
+```
+
+`import_art.py` 는 `art/weapons-source.png` 와 `art/armor-source.png` 를 읽어
+무기 6종과 갑옷 8개(4부위 x 2세트)를 만든다. 기사 세트는 그림을 따로 뽑지 않고
+종자 세트를 청색으로 물들여 쓴다. 두 세트의 형태가 정확히 같아야 한 벌로 보이기 때문이다.
+
+그림을 새로 뽑을 때는 **무기나 부위를 한 줄로 나란히, 배경은 투명하게** 요청한다.
+`import_art.py` 가 연결된 덩어리를 세어 아이템을 가르므로, 개수가 맞지 않으면
+그 자리에서 알려준다.
+
+**직접 그린 16x16 png로 덮어써도 된다.** 그 경우 `import_art.py` 를 다시
+실행하지만 않으면 덮어쓴 그림이 유지된다.
 
 ---
 
@@ -130,7 +146,9 @@ src/main/java/                자바 소스
   datagen/                      모델/레시피/태그/번역 생성기
 src/main/resources/           텍스처 등 직접 만든 리소스
 src/generated/resources/      runData가 만들어낸 JSON (커밋함)
-tools/gen_textures.py         텍스처 생성 스크립트 (Pillow 불필요, 표준 라이브러리만)
+art/                          GPT로 그린 원본 그림 (아이콘의 출처)
+tools/import_art.py           art/*.png -> 16x16 아이템 아이콘
+tools/gen_textures.py         갑옷 착용 레이어 (표준 라이브러리만)
 tools/check_recipe_conflicts.py  레시피가 바닐라와 겹치는지 검사
 tools/check_swing_motions.py     모션이 서로 구분되는지 검사
 .github/workflows/build.yml   push/PR 마다 빌드 검사
