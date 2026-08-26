@@ -6,10 +6,11 @@
 결과:  화면에 경로가 찍히고 그 위치에 png 가 생긴다 (저장소에는 커밋하지 않는다)
 
 레이어 텍스처는 전개도라 파일만 봐서는 몸에 어떻게 발리는지 알 수 없다.
-게임을 켜고 갑옷을 실제로 입어봐야 하는데, 그 전에 앞모습만이라도
-확인하려고 만든 도구다. 각 부위의 '앞면' 칸만 떼어 사람 모양으로 붙인다.
+게임을 켜고 갑옷을 실제로 입어봐야 하는데, 그 전에 확인하려고 만든 도구다.
+각 부위의 앞면과 뒷면 칸을 떼어 사람 모양으로 붙인다.
 
-옆면과 뒷면은 보이지 않으므로, 여기서 멀쩡해 보여도 게임에서 확인은 필요하다.
+뒷면을 같이 보는 이유는, 앞면 그림을 뒷면에 그대로 쓰면 뒤통수에도 바이저가
+생기는 식의 실수가 나기 때문이다. 옆면은 여기서 보이지 않는다.
 """
 
 import os
@@ -29,22 +30,36 @@ ZOOM = 14      # 미리보기 확대 배율
 
 # 각 부위의 '앞면' 칸 (바닐라 64x32 기준 좌표)와, 사람 모양에서의 위치.
 # 사람 앞모습은 가로 16, 세로 32 칸이다.
+# 각 부위의 칸 (바닐라 64x32 기준 좌표)과, 사람 모양에서의 위치.
+# 사람 앞모습은 가로 16, 세로 32 칸이다.
+#   (레이어, 텍스처 x, y, 너비, 높이,  놓을 x, y, 좌우반전)
 FRONT = [
-    # (레이어, 텍스처 x, y, 너비, 높이,  놓을 x, y, 좌우반전)
     (2, 4, 20, 4, 12,  4, 20, False),   # 오른다리 - 각반
     (2, 4, 20, 4, 12,  8, 20, True),    # 왼다리  - 각반
     (2, 20, 20, 8, 12, 4, 8,  False),   # 허리    - 각반
-    (1, 4, 20, 4, 12,  4, 20, False),   # 오른다리 - 장화(아래쪽만 채워져 있다)
+    (1, 4, 20, 4, 12,  4, 20, False),   # 오른다리 - 장화
     (1, 4, 20, 4, 12,  8, 20, True),    # 왼다리  - 장화
     (1, 20, 20, 8, 12, 4, 8,  False),   # 몸통    - 흉갑
     (1, 44, 20, 4, 12, 0, 8,  False),   # 오른팔  - 흉갑
     (1, 44, 20, 4, 12, 12, 8, True),    # 왼팔    - 흉갑
     (1, 8, 8, 8, 8,    4, 0,  False),   # 머리    - 투구
-    (1, 40, 8, 8, 8,   4, 0,  False),   # 모자칸  - 투구 바깥층
+]
+
+# 뒷모습. 뒤에서 보면 좌우가 바뀌므로 팔다리 위치를 서로 바꿔 놓는다.
+BACK = [
+    (2, 12, 20, 4, 12, 8, 20, False),   # 다리 뒷면 - 각반
+    (2, 12, 20, 4, 12, 4, 20, True),
+    (2, 32, 20, 8, 12, 4, 8,  False),   # 허리 뒷면
+    (1, 12, 20, 4, 12, 8, 20, False),   # 다리 뒷면 - 장화
+    (1, 12, 20, 4, 12, 4, 20, True),
+    (1, 32, 20, 8, 12, 4, 8,  False),   # 몸통 뒷면
+    (1, 52, 20, 4, 12, 12, 8, False),   # 팔 뒷면
+    (1, 52, 20, 4, 12, 0, 8,  True),
+    (1, 24, 8, 8, 8,   4, 0,  False),   # 뒤통수
 ]
 
 
-def build(set_name):
+def build(set_name, spec):
     layers = {}
     for n in (1, 2):
         path = os.path.join(ARMOR, "%s_layer_%d.png" % (set_name, n))
@@ -53,7 +68,7 @@ def build(set_name):
         layers[n] = Image.open(path).convert("RGBA")
 
     body = Image.new("RGBA", (16 * ZOOM, 32 * ZOOM), (0, 0, 0, 0))
-    for layer, tx, ty, tw, th, px, py, flip in FRONT:
+    for layer, tx, ty, tw, th, px, py, flip in spec:
         crop = layers[layer].crop((tx * SCALE, ty * SCALE,
                                    (tx + tw) * SCALE, (ty + th) * SCALE))
         if flip:
@@ -64,9 +79,12 @@ def build(set_name):
 
 
 def main():
-    sets = ["squire", "knight"]
-    shots = [(s, build(s)) for s in sets]
-    shots = [(s, im) for s, im in shots if im is not None]
+    shots = []
+    for set_name in ("squire", "knight"):
+        for label, spec in (("앞", FRONT), ("뒤", BACK)):
+            im = build(set_name, spec)
+            if im is not None:
+                shots.append(("%s %s" % (set_name, label), im))
     if not shots:
         print("레이어 텍스처가 없습니다. 먼저 tools/gen_armor_layers.py 를 돌리세요.")
         return 2
