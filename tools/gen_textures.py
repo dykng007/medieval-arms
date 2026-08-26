@@ -20,6 +20,12 @@ import os
 import struct
 import zlib
 
+# 레이어 텍스처의 배율. 바닐라 갑옷 레이어는 64x32 이고, 여기에 이 값을 곱한다.
+# 아이템 아이콘이 32x32(바닐라의 2배)라 레이어도 2배로 맞춰 화질을 통일한다.
+# tools/import_art.py 의 SIZE 를 바꾸면 이 값도 같이 맞춰야 한다.
+LAYER_SCALE = 2
+LAYER_W, LAYER_H = 64 * LAYER_SCALE, 32 * LAYER_SCALE
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ITEM_DIR = os.path.join(ROOT, "src", "main", "resources", "assets", "medievalarms", "textures", "item")
 ARMOR_DIR = os.path.join(ROOT, "src", "main", "resources", "assets", "medievalarms", "textures", "models", "armor")
@@ -329,15 +335,24 @@ def build_armor_layer(width, height, rects, dark, mid, light):
 
 # 바닐라 갑옷 레이어의 UV 배치에 맞춘 영역.
 # layer_1 = 투구 + 상체 + 팔 + 부츠,  layer_2 = 각반(다리)
-LAYER_1_RECTS = [
+# 좌표는 바닐라 64x32 기준으로 적고, 쓸 때 LAYER_SCALE 을 곱한다.
+_LAYER_1_RECTS = [
     (0, 0, 32, 16),    # 머리(투구)
     (16, 16, 40, 32),  # 몸통
     (40, 16, 56, 32),  # 팔
 ]
-LAYER_2_RECTS = [
+_LAYER_2_RECTS = [
     (0, 16, 16, 32),   # 다리
     (16, 16, 40, 32),  # 허리
 ]
+
+
+def _scaled(rects):
+    return [tuple(v * LAYER_SCALE for v in r) for r in rects]
+
+
+LAYER_1_RECTS = _scaled(_LAYER_1_RECTS)
+LAYER_2_RECTS = _scaled(_LAYER_2_RECTS)
 
 
 def main():
@@ -351,7 +366,8 @@ def main():
     for set_name, (dark, mid, light) in layer_colors.items():
         for layer_no, rects in ((1, LAYER_1_RECTS), (2, LAYER_2_RECTS)):
             path = os.path.join(ARMOR_DIR, f"{set_name}_layer_{layer_no}.png")
-            write_png(path, 64, 32, build_armor_layer(64, 32, rects, dark, mid, light))
+            write_png(path, LAYER_W, LAYER_H,
+                      build_armor_layer(LAYER_W, LAYER_H, rects, dark, mid, light))
             made.append(path)
 
     for p in made:

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-GPT로 만든 고해상도 그림을 16x16 아이템 텍스처로 변환한다.
+GPT로 만든 고해상도 그림을 아이템 텍스처로 변환한다.
 
 실행:  python tools/import_art.py
 입력:  art/weapons-source.png   무기 6종이 한 줄로 늘어선 그림
@@ -10,11 +10,11 @@ GPT로 만든 고해상도 그림을 16x16 아이템 텍스처로 변환한다.
 필요:  pip install pillow numpy scipy
 
 ── 줄이는 방식에 대해 ──────────────────────────────────────────────────
-그림 생성기는 진짜 16x16을 만들어주지 못한다. 픽셀아트처럼 보이는 큰 그림을
-줄 뿐이라 직접 줄여야 하는데, 방식에 따라 결과가 크게 달랐다.
+그림 생성기는 정해진 크기의 픽셀아트를 만들어주지 못한다. 픽셀아트처럼 보이는
+큰 그림을 줄 뿐이라 직접 줄여야 하는데, 방식에 따라 결과가 크게 달랐다.
 
   LANCZOS / BOX : 주변 색을 평균 낸다. 원본의 굵은 검은 윤곽이 회색으로 녹아
-                  16x16에서 형체가 뭉갠 것처럼 보인다.
+                  줄인 뒤 형체가 뭉갠 것처럼 보인다.
   팔레트 축소   : 색을 12색으로 줄여봤더니 median cut이 갈색과 금색에 치우쳐
                   강철 회색을 잃고 전부 베이지가 됐다.
   NEAREST       : 각 칸의 한 점을 그대로 집는다. 색이 섞이지 않아 윤곽과
@@ -41,6 +41,13 @@ except ImportError as exc:
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ART = os.path.join(ROOT, "art")
 OUT = os.path.join(ROOT, "src", "main", "resources", "assets", "medievalarms", "textures", "item")
+
+# 아이템 아이콘 한 변의 픽셀 수.
+# 바닐라는 16이지만 마인크래프트는 더 큰 것도 받는다. NeoForge가 밉맵 제약까지
+# 풀어놨기 때문에(SpriteLoader의 "Do not lower the mipmap level" 패치) 32도 문제없다.
+# 16에서는 원본 그림의 세부가 너무 많이 날아가 32로 올렸다.
+# 2의 거듭제곱이어야 하고, 바꾸면 갑옷 레이어 배율(gen_textures.py)도 같이 맞춰야 한다.
+SIZE = 32
 
 ALPHA_BACKGROUND = 16   # 이보다 흐리면 배경으로 본다
 ALPHA_CUTOFF = 110      # 줄인 뒤 이보다 흐리면 완전 투명으로. 반투명 테두리는 게임에서 지저분하다
@@ -86,7 +93,7 @@ def find_items(arr, merge_gap):
 
 
 def to_sprite(arr, labels, item):
-    """아이템 하나를 잘라 정사각으로 맞춘 뒤 16x16으로 줄인다."""
+    """아이템 하나를 잘라 정사각으로 맞춘 뒤 SIZE x SIZE 로 줄인다."""
     box = (slice(item["y0"], item["y1"]), slice(item["x0"], item["x1"]))
     piece = arr[box].copy()
     # 이 사각형 안에 이웃 아이템이 걸쳐 있을 수 있으므로 내 덩어리만 남긴다.
@@ -99,7 +106,7 @@ def to_sprite(arr, labels, item):
     top, left = (side - height) // 2, (side - width) // 2
     square[top:top + height, left:left + width] = piece
 
-    small = np.array(Image.fromarray(square, "RGBA").resize((16, 16), Image.NEAREST))
+    small = np.array(Image.fromarray(square, "RGBA").resize((SIZE, SIZE), Image.NEAREST))
     small[:, :, 3] = np.where(small[:, :, 3] >= ALPHA_CUTOFF, 255, 0)
     small[small[:, :, 3] == 0] = (0, 0, 0, 0)
     return small
@@ -169,7 +176,7 @@ def main():
                 out_name = prefix + name
                 Image.fromarray(pixels, "RGBA").save(os.path.join(OUT, out_name + ".png"))
                 solid = int((pixels[:, :, 3] > 0).sum())
-                print("  %-20s 불투명 %3d/256" % (out_name, solid))
+                print("  %-20s 불투명 %4d/%d" % (out_name, solid, SIZE * SIZE))
 
     return 1 if failed else 0
 

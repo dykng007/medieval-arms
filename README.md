@@ -90,6 +90,11 @@ python tools\import_art.py    # art/*.png -> 16x16 아이템 아이콘
 python tools\gen_textures.py  # 갑옷을 입었을 때 몸에 씌워지는 레이어
 ```
 
+아이콘은 바닐라의 16x16 이 아니라 **32x32** 다. 마인크래프트는 2의 거듭제곱이면
+받아주고, NeoForge 가 `SpriteLoader` 에서 밉맵 레벨을 낮추는 바닐라 동작까지 꺼놨다.
+16x16 에서는 원본 그림의 세부가 너무 많이 날아갔다. 되돌리려면 `import_art.py` 의
+`SIZE` 를 16으로, `gen_textures.py` 의 `LAYER_SCALE` 을 1로 바꾸면 된다.
+
 `import_art.py` 는 `art/weapons-source.png` 와 `art/armor-source.png` 를 읽어
 무기 6종과 갑옷 8개(4부위 x 2세트)를 만든다. 기사 세트는 그림을 따로 뽑지 않고
 종자 세트를 청색으로 물들여 쓴다. 두 세트의 형태가 정확히 같아야 한 벌로 보이기 때문이다.
