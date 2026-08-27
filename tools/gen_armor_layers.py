@@ -43,8 +43,10 @@ HumanoidArmorLayer.setPartVisibility 를 그대로 옮긴 것이다.
     각반  body + 양다리    layer_2
     장화  양다리           layer_1
 
-hat 칸은 비워둔다. 바닐라 갑옷도 비워두는데, 채우면 투구 바깥에 껍데기가
-한 겹 더 생겨 부풀어 보인다.
+hat 칸(가로 32~64, 세로 0~16)은 바닐라 갑옷에서 비어 있는 자리다.
+이 모드는 그 자리를 커스텀 모델의 추가 큐브에 쓴다.
+투구의 돔과 바이저, 흉갑의 견갑이 거기서 텍스처를 가져간다.
+좌표는 MedievalArmorModel 의 texOffs 값과 반드시 같아야 한다.
 
 장화와 흉갑이 같은 layer_1 을 쓰기 때문에 다리 칸을 위까지 채우면 장화가
 정강이받이처럼 보인다. 그래서 다리 칸은 아래쪽만 채운다.
@@ -95,6 +97,16 @@ PARTS = {
     "body": faces(16, 16, 8, 12, 4),
     "arm":  faces(40, 16, 4, 12, 4),
     "leg":  faces(0, 16, 4, 12, 4),
+}
+
+# 커스텀 모델이 더한 큐브들. 텍스처의 오른쪽 위 빈 자리를 쓴다.
+# MedievalArmorModel 의 texOffs / addBox 값과 반드시 같아야 한다.
+#   돔    texOffs(32, 0)  상자 6x3x6
+#   바이저 texOffs(32,10)  상자 8x2x1
+#   견갑  texOffs(32, 0)  상자 6x3x6  (돔과 같은 자리를 나눠 쓴다)
+EXTRA_PARTS = {
+    "crown": faces(32, 0, 6, 3, 6),
+    "visor": faces(32, 10, 8, 2, 1),
 }
 
 SETS = {
@@ -197,6 +209,48 @@ def face_size(face, top_ratio=0.0):
     return W, H - int(H * top_ratio)
 
 
+def fill_holes(face):
+    """
+    면에 뚫린 구멍을 옆 픽셀 색으로 메우고 전부 불투명으로 만든다.
+
+    판 그림의 가장자리는 살짝 흐린 픽셀로 끝나는데, 그대로 줄이면 그 픽셀이
+    투명해져 갑옷에 구멍이 남는다. 게임에서는 그 틈으로 맨살이 비친다.
+    실제로 팔 네 면에 7%씩 구멍이 나서 팔뚝이 들여다보였다.
+
+    갑옷 면은 예외 없이 꽉 차 있어야 하므로, 흐린 픽셀은 같은 줄에서 가장 가까운
+    멀쩡한 픽셀의 색으로 채운다. 판의 명암을 그대로 살리려고 단색으로 덮지 않는다.
+    """
+    out = face.copy()
+    h, w = out.shape[:2]
+    solid = out[:, :, 3] >= 110
+
+    for y in range(h):
+        row = np.where(solid[y])[0]
+        if len(row) == 0:
+            continue
+        for x in range(w):
+            if solid[y, x]:
+                continue
+            nearest = row[np.abs(row - x).argmin()]
+            out[y, x, :3] = out[y, nearest, :3]
+
+    # 줄 전체가 비어 있으면 위아래에서 가져온다.
+    for y in range(h):
+        if solid[y].any():
+            continue
+        for other in range(h):
+            for cand in (y - other, y + other):
+                if 0 <= cand < h and solid[cand].any():
+                    out[y, :, :3] = out[cand, :, :3]
+                    break
+            else:
+                continue
+            break
+
+    out[:, :, 3] = 255
+    return out
+
+
 def write_face(canvas, panel, face, top_ratio=0.0, dim=1.0, flip=False, crop=None):
     """
     판을 면 크기에 맞춰 줄여 캔버스의 제자리에 써넣는다.
@@ -221,8 +275,7 @@ def write_face(canvas, panel, face, top_ratio=0.0, dim=1.0, flip=False, crop=Non
 
     # 픽셀아트라 NEAREST 로 줄여야 가장자리가 뭉개지지 않는다.
     small = np.array(src.resize((W, fh), Image.NEAREST)).astype(np.float32)
-    # 판은 꽉 찬 직사각형이지만, 혹시 남은 반투명 가장자리는 불투명으로 굳힌다.
-    small[:, :, 3] = np.where(small[:, :, 3] >= 110, 255, 0)
+    small = fill_holes(small)
     if dim != 1.0:
         small[:, :, :3] = np.clip(small[:, :, :3] * dim, 0, 255)
     canvas[Y + cut:Y + H, X:X + W] = small
@@ -241,6 +294,19 @@ def build_layer_1(p):
     write_face(canvas, p["helm_back"], head["top"], crop=(0.0, 0.18))
     write_face(canvas, p["helm_back"], head["bottom"], crop=(0.82, 1.0), dim=0.5)
     # hat 칸은 일부러 비운다. 채우면 투구가 두 겹으로 부푼다.
+
+    # ── 커스텀 모델이 더한 큐브 ──
+    # 돔(정수리)과 바이저. 견갑도 돔과 같은 칸을 쓴다.
+    crown, visor = EXTRA_PARTS["crown"], EXTRA_PARTS["visor"]
+    for name, dim in (("front", 1.0), ("right", 0.92), ("left", 0.92), ("back", 0.86)):
+        write_face(canvas, p["helm_back"], crown[name], dim=dim, crop=(0.0, 0.35))
+    write_face(canvas, p["helm_back"], crown["top"], crop=(0.0, 0.12))
+    write_face(canvas, p["helm_back"], crown["bottom"], crop=(0.0, 0.12), dim=0.5)
+
+    # 바이저는 얼굴 앞으로 튀어나오는 얇은 판이라 앞면이 제일 잘 보인다.
+    for name, dim in (("front", 1.0), ("right", 0.9), ("left", 0.9), ("back", 0.8),
+                      ("top", 0.95), ("bottom", 0.55)):
+        write_face(canvas, p["helm_front"], visor[name], dim=dim, crop=(0.40, 0.56))
 
     # ── 흉갑 ──
     write_face(canvas, p["chest_front"], body["front"])
