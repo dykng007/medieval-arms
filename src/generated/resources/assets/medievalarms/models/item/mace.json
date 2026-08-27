@@ -1,5 +1,87 @@
 {
   "parent": "minecraft:item/handheld",
+  "display": {
+    "firstperson_lefthand": {
+      "rotation": [
+        0,
+        90,
+        -25
+      ],
+      "scale": [
+        1.054,
+        1.054,
+        1.054
+      ],
+      "translation": [
+        1.13,
+        4.96,
+        1.13
+      ]
+    },
+    "firstperson_righthand": {
+      "rotation": [
+        0,
+        -90,
+        25
+      ],
+      "scale": [
+        1.054,
+        1.054,
+        1.054
+      ],
+      "translation": [
+        1.13,
+        4.96,
+        1.13
+      ]
+    },
+    "ground": {
+      "scale": [
+        0.775,
+        0.775,
+        0.775
+      ],
+      "translation": [
+        0,
+        2,
+        0
+      ]
+    },
+    "thirdperson_lefthand": {
+      "rotation": [
+        0,
+        90,
+        -55
+      ],
+      "scale": [
+        1.3175,
+        1.3175,
+        1.3175
+      ],
+      "translation": [
+        0,
+        5.7599998,
+        0.5
+      ]
+    },
+    "thirdperson_righthand": {
+      "rotation": [
+        0,
+        -90,
+        55
+      ],
+      "scale": [
+        1.3175,
+        1.3175,
+        1.3175
+      ],
+      "translation": [
+        0,
+        5.7599998,
+        0.5
+      ]
+    }
+  },
   "textures": {
     "layer0": "medievalarms:item/mace"
   }

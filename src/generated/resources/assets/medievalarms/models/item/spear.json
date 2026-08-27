@@ -1,5 +1,82 @@
 {
   "parent": "minecraft:item/handheld",
+  "display": {
+    "firstperson_lefthand": {
+      "rotation": [
+        0,
+        90,
+        -25
+      ],
+      "scale": [
+        1.36,
+        1.36,
+        1.36
+      ],
+      "translation": [
+        1.13,
+        6.4,
+        1.13
+      ]
+    },
+    "firstperson_righthand": {
+      "rotation": [
+        0,
+        -90,
+        25
+      ],
+      "scale": [
+        1.36,
+        1.36,
+        1.36
+      ],
+      "translation": [
+        1.13,
+        6.4,
+        1.13
+      ]
+    },
+    "ground": {
+      "translation": [
+        0,
+        2,
+        0
+      ]
+    },
+    "thirdperson_lefthand": {
+      "rotation": [
+        0,
+        90,
+        -55
+      ],
+      "scale": [
+        1.7,
+        1.7,
+        1.7
+      ],
+      "translation": [
+        0,
+        7.2,
+        0.5
+      ]
+    },
+    "thirdperson_righthand": {
+      "rotation": [
+        0,
+        -90,
+        55
+      ],
+      "scale": [
+        1.7,
+        1.7,
+        1.7
+      ],
+      "translation": [
+        0,
+        7.2,
+        0.5
+      ]
+    }
+  },
   "textures": {
     "layer0": "medievalarms:item/spear"
   }

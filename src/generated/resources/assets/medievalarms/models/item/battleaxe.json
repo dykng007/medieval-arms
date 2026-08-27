@@ -1,5 +1,87 @@
 {
   "parent": "minecraft:item/handheld",
+  "display": {
+    "firstperson_lefthand": {
+      "rotation": [
+        0,
+        90,
+        -25
+      ],
+      "scale": [
+        1.564,
+        1.564,
+        1.564
+      ],
+      "translation": [
+        1.13,
+        7.3599997,
+        1.13
+      ]
+    },
+    "firstperson_righthand": {
+      "rotation": [
+        0,
+        -90,
+        25
+      ],
+      "scale": [
+        1.564,
+        1.564,
+        1.564
+      ],
+      "translation": [
+        1.13,
+        7.3599997,
+        1.13
+      ]
+    },
+    "ground": {
+      "scale": [
+        1.15,
+        1.15,
+        1.15
+      ],
+      "translation": [
+        0,
+        2,
+        0
+      ]
+    },
+    "thirdperson_lefthand": {
+      "rotation": [
+        0,
+        90,
+        -55
+      ],
+      "scale": [
+        1.955,
+        1.955,
+        1.955
+      ],
+      "translation": [
+        0,
+        8.16,
+        0.5
+      ]
+    },
+    "thirdperson_righthand": {
+      "rotation": [
+        0,
+        -90,
+        55
+      ],
+      "scale": [
+        1.955,
+        1.955,
+        1.955
+      ],
+      "translation": [
+        0,
+        8.16,
+        0.5
+      ]
+    }
+  },
   "textures": {
     "layer0": "medievalarms:item/battleaxe"
   }

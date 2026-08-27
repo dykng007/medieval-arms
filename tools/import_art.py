@@ -5,6 +5,20 @@ GPT로 만든 고해상도 그림을 아이템 텍스처로 변환한다.
 실행:  python tools/import_art.py
 입력:  art/weapons-source.png   무기 6종이 한 줄로 늘어선 그림
        art/armor-source.png     갑옷 4부위가 한 줄로 늘어선 그림
+       art/weapon-<이름>.png           (선택) 그 무기 하나만 따로 그린 그림
+       art/weapon-<이름>-upright.png   (선택) 자루를 수직으로 그린 그림
+
+무기 하나만 다시 그리고 싶을 때 여섯 개를 통째로 다시 뽑을 필요는 없다.
+art/weapon-halberd.png 처럼 두면 시트 대신 그 파일을 쓴다.
+
+── -upright 가 필요한 이유 ─────────────────────────────────────────────
+마인크래프트 도구는 자루를 대각선으로 그리는데, 그림 생성기에 대각선 자루를
+요구하면 도끼 머리를 자루에 직각으로 붙이지 못한다. 머리를 수직 자루 기준으로
+그려놓고 대각선 자루에 얹어버려서, 머리만 45도 어긋나 아래로 처져 보인다.
+프롬프트로 각도를 못 박아도 잘 고쳐지지 않았다.
+
+그래서 자루를 수직으로 그리게 하고 여기서 45도 돌린다. 수직 자루에 직각으로
+붙은 머리는 회전해도 직각을 유지하므로 처질 수가 없다.
 출력:  src/main/resources/assets/medievalarms/textures/item/*.png
 
 필요:  pip install pillow numpy scipy
@@ -148,6 +162,62 @@ SHEETS = [
 ]
 
 
+UPRIGHT_ROTATION = -45      # 수직 자루를 오른쪽 위 대각선으로 눕히는 각도
+
+
+def rotate_upright(img):
+    """
+    수직으로 그린 무기를 마인크래프트의 대각선 자세로 돌린다.
+
+    시계 방향 45도. 위를 향하던 자루가 오른쪽 위를 향하게 되고,
+    자루에 직각으로 붙어 있던 머리도 같이 돌아 직각을 유지한다.
+    원본이 큰 그림이라 회전 계단이 생겨도 16이나 32로 줄이면 묻힌다.
+    """
+    return img.rotate(UPRIGHT_ROTATION, resample=Image.BICUBIC, expand=True)
+
+
+def load_override(name):
+    """
+    무기 하나만 따로 그린 그림이 있으면 그것을 읽어 SIZE x SIZE 로 만든다.
+
+    없으면 None 을 돌려줘 시트에서 잘라낸 것을 쓰게 한다.
+    무기 하나를 고치려고 여섯 개를 다시 뽑는 건 낭비라 이 길을 열어뒀다.
+    """
+    upright = os.path.join(ART, "weapon-%s-upright.png" % name)
+    plain = os.path.join(ART, "weapon-%s.png" % name)
+
+    if os.path.exists(upright):
+        path, needs_rotation = upright, True
+    elif os.path.exists(plain):
+        path, needs_rotation = plain, False
+    else:
+        return None
+
+    img = Image.open(path).convert("RGBA")
+    if needs_rotation:
+        img = rotate_upright(img)
+    arr = np.array(img)
+    mask = arr[:, :, 3] > ALPHA_BACKGROUND
+    if not mask.any():
+        print("  %-20s 그림이 비어 있어 건너뜁니다: %s" % (name, os.path.relpath(path, ROOT)))
+        return None
+
+    rows = np.where(mask.any(axis=1))[0]
+    cols = np.where(mask.any(axis=0))[0]
+    piece = arr[rows[0]:rows[-1] + 1, cols[0]:cols[-1] + 1]
+
+    height, width = piece.shape[:2]
+    side = max(width, height)
+    square = np.zeros((side, side, 4), dtype=np.uint8)
+    top, left = (side - height) // 2, (side - width) // 2
+    square[top:top + height, left:left + width] = piece
+
+    small = np.array(Image.fromarray(square, "RGBA").resize((SIZE, SIZE), Image.NEAREST))
+    small[:, :, 3] = np.where(small[:, :, 3] >= ALPHA_CUTOFF, 255, 0)
+    small[small[:, :, 3] == 0] = (0, 0, 0, 0)
+    return small
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     failed = False
@@ -170,7 +240,10 @@ def main():
             continue
 
         for name, item in zip(names, items):
-            base = to_sprite(arr, labels, item)
+            override = load_override(name)
+            base = override if override is not None else to_sprite(arr, labels, item)
+            if override is not None:
+                print("  %-20s (따로 그린 그림 사용)" % name)
             for prefix, recolor in sheet["variants"]:
                 pixels = base if recolor is None else recolor(base)
                 out_name = prefix + name

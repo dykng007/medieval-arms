@@ -1,5 +1,87 @@
 {
   "parent": "minecraft:item/handheld",
+  "display": {
+    "firstperson_lefthand": {
+      "rotation": [
+        0,
+        90,
+        -25
+      ],
+      "scale": [
+        0.91800004,
+        0.91800004,
+        0.91800004
+      ],
+      "translation": [
+        1.13,
+        4.32,
+        1.13
+      ]
+    },
+    "firstperson_righthand": {
+      "rotation": [
+        0,
+        -90,
+        25
+      ],
+      "scale": [
+        0.91800004,
+        0.91800004,
+        0.91800004
+      ],
+      "translation": [
+        1.13,
+        4.32,
+        1.13
+      ]
+    },
+    "ground": {
+      "scale": [
+        0.675,
+        0.675,
+        0.675
+      ],
+      "translation": [
+        0,
+        2,
+        0
+      ]
+    },
+    "thirdperson_lefthand": {
+      "rotation": [
+        0,
+        90,
+        -55
+      ],
+      "scale": [
+        1.1475,
+        1.1475,
+        1.1475
+      ],
+      "translation": [
+        0,
+        5.12,
+        0.5
+      ]
+    },
+    "thirdperson_righthand": {
+      "rotation": [
+        0,
+        -90,
+        55
+      ],
+      "scale": [
+        1.1475,
+        1.1475,
+        1.1475
+      ],
+      "translation": [
+        0,
+        5.12,
+        0.5
+      ]
+    }
+  },
   "textures": {
     "layer0": "medievalarms:item/longsword"
   }
