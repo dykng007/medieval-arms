@@ -17,17 +17,22 @@ description='''
 중세 무기와 갑옷을 추가합니다. 무기 종류에 따라 휘두르는 모션이 달라집니다.
 '''
 
-# 믹스인 설정 파일 위치를 FML에 알린다.
-# 3인칭 휘두르기 동작을 바꾸는 데 쓰인다 (mixin/HumanoidModelMixin 참고).
-[[mixins]]
-config="${mod_id}.mixins.json"
-
 [[dependencies.${mod_id}]]
     modId="neoforge"
     type="required"
     versionRange="[${neo_version},)"
     ordering="NONE"
     side="BOTH"
+
+# 무기를 휘두르는 애니메이션을 재생하는 라이브러리.
+# 없으면 모드가 아예 켜지지 않게 required 로 둔다. 애니메이션이 이 모드의 핵심이라
+# 라이브러리 없이 켜지면 무기만 있고 모션이 없는 반쪽짜리가 되기 때문이다.
+[[dependencies.${mod_id}]]
+    modId="playeranimator"
+    type="required"
+    versionRange="[2.0.0,)"
+    ordering="AFTER"
+    side="CLIENT"
 
 [[dependencies.${mod_id}]]
     modId="minecraft"

@@ -5,7 +5,17 @@
 마인크래프트 **1.21.1 / NeoForge** 모드. 중세 무기와 갑옷을 추가하고,
 **무기 종류에 따라 휘두르는 모션이 달라진다.**
 
-외부 라이브러리 의존성이 없다. 이 jar 하나만 넣으면 동작한다.
+## 설치
+
+이 모드는 **[PlayerAnimator](https://www.curseforge.com/minecraft/mc-mods/playeranimator)를
+함께 설치해야 한다.** 무기를 휘두르는 애니메이션을 그 라이브러리가 재생하기 때문에,
+없으면 게임이 켜지지 않는다. CurseForge 페이지에도 필수 의존성으로 표시되어 있어
+보통은 함께 받아진다.
+
+| 넣을 것 | 어디서 |
+|---|---|
+| `medievalarms-<버전>.jar` | 이 저장소의 [Releases](https://github.com/dykng007/medieval-arms/releases) |
+| `player-animation-lib-forge-<버전>.jar` | [CurseForge](https://www.curseforge.com/minecraft/mc-mods/playeranimator) — 1.21.1 / NeoForge 용 |
 
 ---
 
@@ -52,34 +62,38 @@ python tools\check_recipe_conflicts.py       # 레시피가 바닐라와 겹치�
 
 ### 휘두르는 모션을 조정하려면
 
-`weapon/SwingMotion.java`의 숫자만 고치면 된다. 렌더링 코드는 건드릴 필요가 없다.
-
-동작은 **준비(windup)** 와 **타격(strike)** 두 단계로 나뉜다.
-
-| 값 | 단계 | 뜻 |
-|---|---|---|
-| `windupPitch` | 준비 | 무기를 위로 치켜드는 각도 |
-| `strikePitch` | 타격 | 아래로 내리치는 각도 |
-| `windupPull` | 준비 | 몸쪽으로 당기는 거리(블록) |
-| `strikeReach` | 타격 | 앞으로 내미는 거리(블록) |
-| `strikeYaw` | 타격 | 옆으로 후리는 각도 |
-| `speedScale` | 전체 | 완급. 1보다 크면 날렵, 작으면 묵직 |
-
-**같은 축에서 각도만 조금 다르게 주면 화면에서는 똑같아 보인다.** 처음 만들었을 때
-실제로 그랬다. 여섯 무기가 하나의 궤적에 각도만 다르게 얹힌 구조여서, 숫자상으로는
-달랐는데 게임에서는 구분이 안 됐다. 무기를 구분하려면 *어느 축으로 크게 움직이는지*
-자체를 다르게 해야 한다 — 창은 앞뒤 이동, 철퇴는 위아래 회전, 미늘창은 좌우 회전.
-
-값을 바꾼 뒤에는 게임을 켜기 전에 이걸 먼저 돌리는 편이 빠르다.
+`tools/gen_animations.py`의 각도만 고치고 다시 실행하면 된다. 자바 코드는 건드릴 필요가 없다.
 
 ```powershell
-python tools\check_swing_motions.py
+python tools\gen_animations.py    # 각도 -> assets/medievalarms/player_animations/*.json
+python tools\check_animations.py  # 게임 켜기 전에 검사
 ```
 
-궤적을 계산해 모션 쌍마다 최대 차이를 재고, 눈에 띌 만큼 다른지 판정한다.
-진행도 0과 1에서 평상시 자세로 돌아오는지도 함께 확인한다(안 돌아오면 동작 끝에 툭 끊긴다).
+모션은 **네 박자**로 되어 있다. 반대쪽으로 몸을 꼬아 힘을 모으고(준비), 꼬았던 몸이
+풀리며 무기가 나가고(타격), 여세로 조금 더 갔다가(마무리), 평상시 자세로 돌아온다.
 
-같은 값이 1인칭과 3인칭 양쪽에 쓰인다. 3인칭은 팔이 과장되게 꺾이지 않도록 절반만 반영된다.
+각도는 도 단위로 적고, 스크립트가 라디안으로 바꿔 넣는다.
+
+| 채널 | 뜻 |
+|---|---|
+| `pitch` | 팔은 음수가 앞으로 올라감. −90이 수평 정면, −200쯤이 머리 위.<br>몸통은 양수가 뒤로 젖히기, 음수가 앞으로 숙이기 |
+| `yaw` | 좌우 회전 |
+| `roll` | 팔을 옆으로 벌리기. +90이면 완전히 옆 |
+| `x` `y` `z` | 픽셀 단위 이동. `z`가 음수면 앞쪽 |
+
+**가장 중요한 것은 팔이 아니라 몸통(`torso`)이다.** 처음에는 손에 든 아이템만
+회전·이동시켰다. 팔도 몸도 그대로여서 무기만 허공에서 떠다니는 것처럼 보였고,
+숫자를 아무리 맞춰도 그 한계는 넘지 못했다. 사람이 창을 지를 때 실제로 움직이는
+것은 무기가 아니라 몸이다. 지금은 몸통이 좌우로 ±60도씩 돌고 머리가 그 60%를
+따라간다. 머리를 100% 따라가게 하면 1인칭에서 화면이 심하게 흔들린다.
+
+**검사를 건너뛰지 말 것.** 이 형식은 틀려도 게임이 죽지 않고 조용히 아무 일도
+일어나지 않는다. 뼈대 이름을 `rightarm`이라고 쓰면(맞는 이름은 `rightArm`)
+라이브러리가 그 항목을 그냥 건너뛴다. 오른팔이 안 움직이는 걸 게임을 켜서 눈으로
+알아채야 하는데, 한 번 켜는 데 몇 분이 걸린다.
+
+재생은 [PlayerAnimator](https://github.com/KosmX/minecraftPlayerAnimator)가 한다.
+플레이어가 이 라이브러리를 **함께 설치해야 한다**(필수 의존성).
 
 ### 텍스처를 바꾸려면
 
@@ -167,7 +181,6 @@ src/main/java/                자바 소스
   weapon/SwingMotion.java       ★ 모션 모양 표
   armor/ArmorSet.java           ★ 갑옷 세트 표
   client/                       1인칭 렌더링, 3인칭 들고 있는 자세
-  mixin/                        3인칭 휘두르기 (믹스인)
   datagen/                      모델/레시피/태그/번역 생성기
 src/main/resources/           텍스처 등 직접 만든 리소스
 src/generated/resources/      runData가 만들어낸 JSON (커밋함)
@@ -176,7 +189,8 @@ tools/import_art.py           art/*.png -> 16x16 아이템 아이콘
 tools/gen_armor_layers.py     갑옷 착용 레이어 (UV 전개도에 재질 배치)
 tools/preview_armor.py        착용 모습 정면 미리보기
 tools/check_recipe_conflicts.py  레시피가 바닐라와 겹치는지 검사
-tools/check_swing_motions.py     모션이 서로 구분되는지 검사
+tools/gen_animations.py          무기별 휘두르기 애니메이션 생성
+tools/check_animations.py        애니메이션이 올바른지 검사
 .github/workflows/build.yml   push/PR 마다 빌드 검사
 .github/workflows/release.yml v* 태그 → 빌드·릴리스·업로드
 ```

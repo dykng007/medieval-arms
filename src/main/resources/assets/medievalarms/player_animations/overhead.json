@@ -1,0 +1,256 @@
+{
+  "name": "overhead",
+  "author": "dykng007",
+  "description": "medievalarms overhead attack",
+  "emote": {
+    "beginTick": 0,
+    "endTick": 20,
+    "stopTick": 23,
+    "isLoop": false,
+    "returnTick": 0,
+    "nsfw": false,
+    "degrees": false,
+    "moves": [
+      {
+        "tick": 0,
+        "easing": "INOUTSINE",
+        "turn": 0,
+        "head": {
+          "pitch": 0.0
+        }
+      },
+      {
+        "tick": 6,
+        "easing": "INOUTSINE",
+        "turn": 0,
+        "head": {
+          "pitch": 0.2618
+        }
+      },
+      {
+        "tick": 9,
+        "easing": "INOUTSINE",
+        "turn": 0,
+        "head": {
+          "pitch": -0.5236
+        }
+      },
+      {
+        "tick": 13,
+        "easing": "INOUTSINE",
+        "turn": 0,
+        "head": {
+          "pitch": -0.3351
+        }
+      },
+      {
+        "tick": 20,
+        "easing": "OUTQUAD",
+        "turn": 0,
+        "head": {
+          "pitch": 0.0
+        }
+      },
+      {
+        "tick": 0,
+        "easing": "INOUTSINE",
+        "turn": 0,
+        "leftArm": {
+          "pitch": 0.0
+        }
+      },
+      {
+        "tick": 6,
+        "easing": "INOUTSINE",
+        "turn": 0,
+        "leftArm": {
+          "pitch": -3.40339
+        }
+      },
+      {
+        "tick": 9,
+        "easing": "INOUTSINE",
+        "turn": 0,
+        "leftArm": {
+          "pitch": -1.18682
+        }
+      },
+      {
+        "tick": 13,
+        "easing": "INOUTSINE",
+        "turn": 0,
+        "leftArm": {
+          "pitch": -0.94248
+        }
+      },
+      {
+        "tick": 20,
+        "easing": "OUTQUAD",
+        "turn": 0,
+        "leftArm": {
+          "pitch": 0.0
+        }
+      },
+      {
+        "tick": 0,
+        "easing": "INOUTSINE",
+        "turn": 0,
+        "leftArm": {
+          "yaw": 0.0
+        }
+      },
+      {
+        "tick": 6,
+        "easing": "INOUTSINE",
+        "turn": 0,
+        "leftArm": {
+          "yaw": -0.2618
+        }
+      },
+      {
+        "tick": 9,
+        "easing": "INOUTSINE",
+        "turn": 0,
+        "leftArm": {
+          "yaw": 0.13963
+        }
+      },
+      {
+        "tick": 13,
+        "easing": "INOUTSINE",
+        "turn": 0,
+        "leftArm": {
+          "yaw": 0.08727
+        }
+      },
+      {
+        "tick": 20,
+        "easing": "OUTQUAD",
+        "turn": 0,
+        "leftArm": {
+          "yaw": 0.0
+        }
+      },
+      {
+        "tick": 0,
+        "easing": "INOUTSINE",
+        "turn": 0,
+        "rightArm": {
+          "pitch": 0.0
+        }
+      },
+      {
+        "tick": 6,
+        "easing": "INOUTSINE",
+        "turn": 0,
+        "rightArm": {
+          "pitch": -3.49066
+        }
+      },
+      {
+        "tick": 9,
+        "easing": "INOUTSINE",
+        "turn": 0,
+        "rightArm": {
+          "pitch": -1.22173
+        }
+      },
+      {
+        "tick": 13,
+        "easing": "INOUTSINE",
+        "turn": 0,
+        "rightArm": {
+          "pitch": -0.95993
+        }
+      },
+      {
+        "tick": 20,
+        "easing": "OUTQUAD",
+        "turn": 0,
+        "rightArm": {
+          "pitch": 0.0
+        }
+      },
+      {
+        "tick": 0,
+        "easing": "INOUTSINE",
+        "turn": 0,
+        "rightArm": {
+          "yaw": 0.0
+        }
+      },
+      {
+        "tick": 6,
+        "easing": "INOUTSINE",
+        "turn": 0,
+        "rightArm": {
+          "yaw": 0.2618
+        }
+      },
+      {
+        "tick": 9,
+        "easing": "INOUTSINE",
+        "turn": 0,
+        "rightArm": {
+          "yaw": -0.13963
+        }
+      },
+      {
+        "tick": 13,
+        "easing": "INOUTSINE",
+        "turn": 0,
+        "rightArm": {
+          "yaw": -0.08727
+        }
+      },
+      {
+        "tick": 20,
+        "easing": "OUTQUAD",
+        "turn": 0,
+        "rightArm": {
+          "yaw": 0.0
+        }
+      },
+      {
+        "tick": 0,
+        "easing": "INOUTSINE",
+        "turn": 0,
+        "torso": {
+          "pitch": 0.0
+        }
+      },
+      {
+        "tick": 6,
+        "easing": "INOUTSINE",
+        "turn": 0,
+        "torso": {
+          "pitch": 0.43633
+        }
+      },
+      {
+        "tick": 9,
+        "easing": "INOUTSINE",
+        "turn": 0,
+        "torso": {
+          "pitch": -0.87266
+        }
+      },
+      {
+        "tick": 13,
+        "easing": "INOUTSINE",
+        "turn": 0,
+        "torso": {
+          "pitch": -0.55851
+        }
+      },
+      {
+        "tick": 20,
+        "easing": "OUTQUAD",
+        "turn": 0,
+        "torso": {
+          "pitch": 0.0
+        }
+      }
+    ]
+  }
+}

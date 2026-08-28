@@ -9,6 +9,7 @@ import net.minecraft.world.item.Item;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
 
@@ -24,6 +25,9 @@ import java.util.List;
  * <p>갑옷에는 {@link MedievalArmorClientExtensions}를 연결해 상자가 아닌
  * 모델로 그리게 한다. 그 모델의 뼈대는 여기서 미리 등록해둬야 쓸 수 있다.
  *
+ * <p>무기를 휘두르는 애니메이션이 얹힐 자리도 여기서 만들어 둔다
+ * ({@link WeaponAnimations}).
+ *
  * <p>{@code Dist.CLIENT}로 제한되어 있어 서버에서는 이 클래스가 아예 로드되지 않는다.
  * 그래야 서버에 없는 렌더링 클래스를 건드리다 터지는 일이 없다.
  */
@@ -31,6 +35,15 @@ import java.util.List;
 public final class MedievalArmsClient {
 
     private MedievalArmsClient() {
+    }
+
+    /**
+     * 플레이어마다 애니메이션 층을 하나씩 붙인다.
+     * 실제로 무엇을 재생할지는 {@link WeaponSwingWatcher} 가 정한다.
+     */
+    @SubscribeEvent
+    public static void setupAnimations(FMLClientSetupEvent event) {
+        WeaponAnimations.register();
     }
 
     @SubscribeEvent
