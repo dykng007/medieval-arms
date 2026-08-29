@@ -1,0 +1,1 @@
+Adds six medieval weapons and two armour sets, each weapon type swinging with its own animation. 중세 무기 6종과 갑옷 2세트를 추가하며, 무기 종류마다 휘두르는 모션이 다릅니다.
